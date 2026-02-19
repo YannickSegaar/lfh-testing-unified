@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Last Frontier Heliskiing — AI Agent Testing (Full)</title>
+    <meta name="robots" content="noindex, nofollow">
+
+    <!-- Preload custom font -->
+    <link rel="preload"
+          href="https://yannicksegaar.github.io/lastfrontier-voiceflow-styles/fonts/NexaRustSansBlack2.woff2"
+          as="font" type="font/woff2" crossorigin>
+
+    <style>
+        @font-face {
+            font-family: 'Nexa Rust Sans Black 2';
+            src: url('https://yannicksegaar.github.io/lastfrontier-voiceflow-styles/fonts/NexaRustSansBlack2.woff2') format('woff2');
+            font-weight: normal;
+            font-style: normal;
+            font-display: swap;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background:
+                linear-gradient(rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.55)),
+                url('https://yannicksegaar.github.io/RomAIx-Logo/LFH_bg_content_and_image_black.png') center/cover no-repeat fixed;
+            color: #FFFFFF;
+        }
+
+        /* Internal testing banner */
+        .test-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: #e62b1e;
+            color: #fff;
+            text-align: center;
+            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            z-index: 9999;
+        }
+
+        /* Password gate */
+        .password-gate {
+            text-align: center;
+            max-width: 400px;
+            padding: 40px 24px;
+        }
+
+        .password-gate .logo {
+            width: 280px;
+            max-width: 90vw;
+            margin-bottom: 24px;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+        }
+
+        .password-gate h2 {
+            font-family: 'Nexa Rust Sans Black 2', system-ui, sans-serif;
+            font-size: 1.2rem;
+            margin-bottom: 16px;
+            letter-spacing: 0.5px;
+        }
+
+        .password-gate p {
+            color: rgba(255,255,255,0.6);
+            font-size: 0.85rem;
+            margin-bottom: 20px;
+        }
+
+        .password-form {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .password-wrapper {
+            position: relative;
+            width: 240px;
+        }
+
+        .password-wrapper input {
+            padding: 10px 40px 10px 16px;
+            border: 1px solid rgba(255,255,255,0.25);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 0.9rem;
+            outline: none;
+            width: 100%;
+            backdrop-filter: blur(4px);
+        }
+
+        .password-wrapper input::placeholder {
+            color: rgba(255,255,255,0.4);
+        }
+
+        .password-wrapper input:focus {
+            border-color: #e62b1e;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            padding: 0;
+            border: none;
+            background: none;
+            color: rgba(255,255,255,0.35);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: color 0.2s;
+        }
+
+        .password-toggle:hover {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .password-toggle svg {
+            width: 18px;
+            height: 18px;
+        }
+
+        .password-form > button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            background: #e62b1e;
+            color: #fff;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .password-form button:hover {
+            background: #cc2419;
+        }
+
+        .password-error {
+            color: #ff6b6b;
+            font-size: 0.8rem;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* Main content (hidden until authenticated) */
+        .content {
+            text-align: center;
+            max-width: 640px;
+            padding: 40px 24px;
+            display: none;
+        }
+
+        .content.visible {
+            display: block;
+        }
+
+        .logo {
+            width: 320px;
+            max-width: 90vw;
+            margin-bottom: 32px;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.3));
+        }
+
+        h1 {
+            font-family: 'Nexa Rust Sans Black 2', system-ui, sans-serif;
+            font-size: 1.5rem;
+            margin-bottom: 12px;
+            letter-spacing: 0.5px;
+        }
+
+        .subtitle {
+            color: rgba(255,255,255,0.75);
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .disclaimer {
+            background: rgba(230, 43, 30, 0.15);
+            border: 1px solid rgba(230, 43, 30, 0.4);
+            border-radius: 8px;
+            padding: 16px 20px;
+            text-align: left;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 20px;
+        }
+
+        .disclaimer strong {
+            color: #e62b1e;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .loom-video {
+            margin-bottom: 20px;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+
+        .instructions {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: 8px;
+            padding: 20px 24px;
+            text-align: left;
+            font-size: 0.88rem;
+            line-height: 1.7;
+            color: rgba(255,255,255,0.85);
+            backdrop-filter: blur(4px);
+            margin-bottom: 20px;
+        }
+
+        .instructions strong {
+            color: #e62b1e;
+        }
+
+        .instructions ul {
+            margin: 8px 0 0 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 6px;
+        }
+
+        .feedback-note {
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(78, 204, 163, 0.3);
+            border-radius: 8px;
+            padding: 16px 20px;
+            text-align: left;
+            font-size: 0.85rem;
+            line-height: 1.6;
+            color: rgba(255,255,255,0.85);
+            backdrop-filter: blur(4px);
+        }
+
+        .feedback-note strong {
+            color: #4ecca3;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .version {
+            margin-top: 24px;
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.4);
+        }
+    </style>
+</head>
+<body>
+
+<div class="test-banner">INTERNAL TESTING ONLY — Not for public distribution</div>
+
+<!-- Password Gate -->
+<div class="password-gate" id="password-gate">
+    <img src="https://yannicksegaar.github.io/RomAIx-Logo/LFH_Logo_FullName_White.svg"
+         alt="Last Frontier Heliskiing" class="logo">
+    <h2>Internal Testing Access</h2>
+    <p>Enter the password to access the AI assistant testing environment.</p>
+    <div class="password-form">
+        <div class="password-wrapper">
+            <input type="password" id="password-input" placeholder="Password" autofocus>
+            <button type="button" class="password-toggle" id="password-toggle" onclick="togglePassword()" aria-label="Show password">
+                <svg id="eye-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg id="eye-closed" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+        </div>
+        <button onclick="checkPassword()">Enter</button>
+    </div>
+    <p class="password-error" id="password-error">Incorrect password. Please try again.</p>
+</div>
+
+<!-- Main Content (hidden until authenticated) -->
+<div class="content" id="main-content">
+    <img src="https://yannicksegaar.github.io/RomAIx-Logo/LFH_Logo_FullName_White.svg"
+         alt="Last Frontier Heliskiing" class="logo">
+
+    <h1>AI Agent — Full Testing</h1>
+
+    <p class="subtitle">
+        Click the chat bubble in the bottom-right corner to start a conversation with the full AI agent, including all interactive components.
+    </p>
+
+    <div class="disclaimer">
+        <strong>What you're testing:</strong>
+        This is the full AI agent with all interactive components enabled: tour explorer, lodge comparison, self-service portal, weather conditions, and feedback widgets.
+        Test the complete experience — ask questions, interact with the visual components, and check that everything works together.
+    </div>
+
+    <div class="loom-video">
+        <div style="position: relative; padding-bottom: 64.98194945848375%; height: 0;"><iframe src="https://www.loom.com/embed/dc3ed8c4b51246e9be276e004d58a713" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%;"></iframe></div>
+    </div>
+
+    <div class="instructions">
+        <strong>How to test:</strong>
+        <ul>
+            <li>Ask the assistant questions about Last Frontier — tours, lodges, pricing, safety, terrain, getting here, and anything else guests might ask</li>
+            <li>Check if the answers are <strong>accurate</strong> — does it get the facts right?</li>
+            <li>Check if the answers are <strong>complete</strong> — is anything important missing?</li>
+            <li>Check if the <strong>tone</strong> feels right — does it sound like Last Frontier?</li>
+            <li>Test the <strong>interactive components</strong> — tour explorer, lodge comparison, weather, and self-service portal</li>
+            <li>Try tricky or unusual questions to see how it handles them</li>
+        </ul>
+    </div>
+
+    <div class="feedback-note">
+        <strong>Your feedback is essential:</strong>
+        After testing, please share your thoughts — what answers were great, what was wrong or missing, and what didn't feel right.
+        This feedback directly shapes how we improve the assistant.
+        You can use the thumbs up/down buttons in the chat, or send your notes to the team.
+    </div>
+
+    <p class="version" id="version-info">Loading assistant...</p>
+</div>
+
+<!-- Self-service modal (script tag, registers on window.__lfh) -->
+<script src="./extensions/browser-self-service-modal-unified.js"></script>
+
+<!-- Password check -->
+<script>
+var ACCESS_PASSWORD = 'Y6i6y54ac!';
+
+function togglePassword() {
+    var input = document.getElementById('password-input');
+    var eyeOpen = document.getElementById('eye-open');
+    var eyeClosed = document.getElementById('eye-closed');
+    if (input.type === 'password') {
+        input.type = 'text';
+        eyeOpen.style.display = 'none';
+        eyeClosed.style.display = 'block';
+    } else {
+        input.type = 'password';
+        eyeOpen.style.display = 'block';
+        eyeClosed.style.display = 'none';
+    }
+}
+
+function checkPassword() {
+    var input = document.getElementById('password-input').value;
+    if (input === ACCESS_PASSWORD) {
+        document.getElementById('password-gate').style.display = 'none';
+        document.getElementById('main-content').classList.add('visible');
+        sessionStorage.setItem('lfh_test_auth', 'true');
+        loadVoiceflow();
+    } else {
+        document.getElementById('password-error').style.display = 'block';
+        document.getElementById('password-input').value = '';
+        document.getElementById('password-input').focus();
+    }
+}
+
+// Allow Enter key
+document.getElementById('password-input').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') checkPassword();
+});
+
+// Check if already authenticated this session
+if (sessionStorage.getItem('lfh_test_auth') === 'true') {
+    document.getElementById('password-gate').style.display = 'none';
+    document.getElementById('main-content').classList.add('visible');
+    loadVoiceflow();
+}
+
+function loadVoiceflow() {
+    var d = document, t = 'script';
+    var v = d.createElement(t), s = d.getElementsByTagName(t)[0];
+    v.onload = async function() {
+        console.log("VoiceFlow widget script loaded.");
+
+        // Device detection
+        var MOBILE_BREAKPOINT = 768;
+        var deviceType = window.innerWidth < MOBILE_BREAKPOINT ? 'mobile' : 'desktop';
+
+        // Language detection
+        var SUPPORTED_LANGUAGES = { en: 'EN', fr: 'FR', de: 'DE', es: 'ES' };
+        var browserLang = (navigator.language || navigator.userLanguage || 'en').slice(0, 2).toLowerCase();
+        var userLanguage = SUPPORTED_LANGUAGES[browserLang] || 'EN';
+
+        // Timezone & local time
+        var visitorTimezone = '';
+        var localHour = '';
+        var dayOfWeek = '';
+        try {
+            visitorTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            localHour = new Date().getHours();
+            dayOfWeek = new Date().toLocaleDateString('en-US', { weekday: 'long' });
+        } catch (e) {}
+
+        // Visit tracking
+        var visitCount = 1;
+        var isReturning = false;
+        try {
+            var storedCount = localStorage.getItem('lfh_visit_count');
+            if (storedCount) {
+                visitCount = parseInt(storedCount, 10) + 1;
+                isReturning = true;
+            }
+            localStorage.setItem('lfh_visit_count', String(visitCount));
+        } catch (e) {}
+
+        // Session data payload
+        var sessionData = {
+            device_type: deviceType,
+            user_language: userLanguage,
+            visitor_timezone: visitorTimezone,
+            local_hour: localHour,
+            day_of_week: dayOfWeek,
+            is_returning: isReturning,
+            visit_count: visitCount,
+            page_type: 'home',
+            page_topic: ''
+        };
+
+        // Load all unified extensions
+        var extensions = [];
+        try {
+            var [feedbackMod, selfServiceMod, lodgeMod, tourMod, weatherMod] = await Promise.all([
+                import('./extensions/feedback-widget-unified.js'),
+                import('./extensions/browser-self-service-widget-unified.js'),
+                import('./extensions/lodge-compare-modal-unified.js'),
+                import('./extensions/tour-explorer-modal-unified.js'),
+                import('./extensions/weather-conditions-modal-unified.js'),
+            ]);
+            extensions = [
+                feedbackMod.LastFrontierFeedbackWidgetUnified,
+                selfServiceMod.LastFrontierBrowserSelfService,
+                lodgeMod.LastFrontierLodgeCompare,
+                tourMod.LastFrontierTourExplorer,
+                weatherMod.LastFrontierWeatherConditionsModal,
+            ];
+            console.log('Extensions loaded:', extensions.map(function(e) { return e.name; }));
+        } catch (err) {
+            console.warn('Could not load extensions:', err);
+        }
+
+        document.getElementById('version-info').textContent = 'Full agent testing — assistant ready';
+
+        window.voiceflow.chat.load({
+            verify: { projectID: '697b7ad4c3869d8704245dc7' },
+            url: 'https://general-runtime.voiceflow.com',
+            versionID: 'production',
+            launch: {
+                event: {
+                    type: 'launch',
+                    payload: sessionData
+                }
+            },
+            assistant: {
+                stylesheet: 'https://yannicksegaar.github.io/lastfrontier-voiceflow-styles/LFH_styles.css?=v3',
+                extensions: extensions
+            }
+        }).then(function() {
+            console.log("VoiceFlow chat loaded successfully");
+
+            window.voiceflow.chat.proactive.clear();
+            setTimeout(function() {
+                window.voiceflow.chat.proactive.push({
+                    type: 'text',
+                    payload: { message: 'Curious about heliskiing in Northern BC?' }
+                });
+            }, 1000);
+            setTimeout(function() {
+                window.voiceflow.chat.proactive.push({
+                    type: 'text',
+                    payload: { message: 'I can show you around!' }
+                });
+            }, 3000);
+            setTimeout(function() {
+                window.voiceflow.chat.open();
+            }, 4000);
+        });
+    };
+    v.src = 'https://cdn.voiceflow.com/widget-next/bundle.mjs';
+    v.type = 'text/javascript';
+    s.parentNode.insertBefore(v, s);
+}
+</script>
+
+<!-- Shadow DOM style injection -->
+<script src="https://yannicksegaar.github.io/lastfrontier-voiceflow-styles/lastfrontier-shadow-inject.js?v=3"></script>
+
+<!-- Help tooltip injection -->
+<script>
+(function() {
+    var attempts = 0;
+    var maxAttempts = 50;
+    function injectTooltip() {
+        attempts++;
+        var host = document.getElementById('voiceflow-chat');
+        if (!host || !host.shadowRoot) {
+            if (attempts < maxAttempts) setTimeout(injectTooltip, 200);
+            return;
+        }
+        var sr = host.shadowRoot;
+        if (sr.querySelector('.lf-help-tooltip')) return;
+        var assistantInfo = sr.querySelector('.vfrc-assistant-info') || sr.querySelector('[class*="assistant-info"]');
+        if (!assistantInfo) {
+            if (attempts < maxAttempts) setTimeout(injectTooltip, 200);
+            return;
+        }
+        var style = document.createElement('style');
+        style.id = 'lf-tooltip-styles';
+        style.textContent = [
+            '.lf-help-tooltip{display:flex;justify-content:center;margin-top:10px;position:relative}',
+            '.lf-help-circle{width:24px;height:24px;border-radius:50%;border:none;background:linear-gradient(180deg,#ee2e24,#CC3333);color:#fff;font-size:13px;font-weight:700;font-family:"Nexa Rust Sans Black 2",system-ui,sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;line-height:1;transition:filter .2s,box-shadow .2s;box-shadow:0 2px 6px rgba(204,51,51,.3)}',
+            '.lf-help-circle:hover{filter:brightness(1.1);box-shadow:0 3px 10px rgba(204,51,51,.45)}',
+            '.lf-help-balloon{position:absolute;top:calc(100% + 10px);left:50%;transform:translateX(-50%) translateY(-4px);width:220px;background:#F5F5F5;color:#42494e;border:1px solid #ddd;border-radius:6px;padding:14px 16px;box-shadow:0 4px 12px rgba(0,0,0,.1);opacity:0;visibility:hidden;transition:opacity .2s,transform .2s,visibility .2s;pointer-events:none;font-family:system-ui,-apple-system,sans-serif;font-size:12.5px;line-height:1.6;z-index:100;text-align:left}',
+            '.lf-help-balloon::before{content:"";position:absolute;top:-6px;left:50%;margin-left:-6px;width:11px;height:11px;background:#F5F5F5;border-top:1px solid #ddd;border-left:1px solid #ddd;transform:rotate(45deg)}',
+            '.lf-help-tooltip:hover .lf-help-balloon{opacity:1;visibility:visible;transform:translateX(-50%) translateY(0);pointer-events:auto}',
+            '.lf-help-balloon strong{display:block;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid #e0e0e0;font-family:"Nexa Rust Sans Black 2",system-ui,sans-serif;font-size:12px;color:#CC3333;letter-spacing:.3px}',
+            '.lf-help-balloon ul{margin:0;padding:0 0 0 16px;list-style:none}',
+            '.lf-help-balloon li{margin-bottom:4px;color:#42494e;padding-left:2px}',
+            '.lf-help-balloon li::before{content:"\\2022";color:#CC3333;font-weight:700;display:inline-block;width:14px;margin-left:-14px}'
+        ].join('');
+        sr.appendChild(style);
+        var wrap = document.createElement('div');
+        wrap.className = 'lf-help-tooltip';
+        wrap.innerHTML = '<button class="lf-help-circle" aria-label="Help" type="button">?</button><div class="lf-help-balloon"><strong>I can help with:</strong><ul><li>Tours &amp; pricing</li><li>Our two lodges</li><li>Safety &amp; equipment</li><li>Getting here</li><li>Booking questions</li></ul></div>';
+        assistantInfo.appendChild(wrap);
+    }
+    if (document.readyState === 'complete') injectTooltip();
+    else window.addEventListener('load', injectTooltip);
+})();
+</script>
+
+<!-- Notification sound -->
+<script src="https://yannicksegaar.github.io/lastfrontier-voiceflow-styles/notification-sound.js"></script>
+
+</body>
+</html>
