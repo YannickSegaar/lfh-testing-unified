@@ -12,7 +12,7 @@
  * @author Last Frontier Heliskiing / RomAIx
  */
 
-import { LFH_COLORS, LFH_ASSETS } from '../lfh-tour-explorer-modal.js';
+import { LFH_COLORS, LFH_ASSETS } from './lfh-tour-explorer-modal.js';
 import { openWeatherConditionsModal } from './lfh-weather-conditions-modal-unified.js';
 
 // ============================================================================

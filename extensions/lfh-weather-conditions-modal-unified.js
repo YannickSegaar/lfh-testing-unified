@@ -13,7 +13,7 @@
  * @author Last Frontier Heliskiing / RomAIx
  */
 
-import { LFH_COLORS, LFH_ASSETS } from '../lfh-tour-explorer-modal.js';
+import { LFH_COLORS, LFH_ASSETS } from './lfh-tour-explorer-modal.js';
 import { openLodgeCompareModal } from './lfh-lodge-compare-modal-v2-unified.js';
 import { openTourExplorerModalWithBookingUnified } from './lfh-tour-explorer-modal-booking-unified.js';
 

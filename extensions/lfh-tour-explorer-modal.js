@@ -1,25 +1,218 @@
 /**
- * Last Frontier Tour Explorer - Enhanced Modal with Booking (Unified Event Architecture)
+ * Last Frontier Tour Explorer - Shared Modal Module
  *
- * Extends the Tour Explorer modal with in-modal booking form.
- * Two UI variants: Replace (content swap) and Slide (side panel).
+ * Full-screen overlay modal with filter bar, tour card grid,
+ * compare mode, tour detail view with video embeds, and
+ * VoiceFlow agent communication.
  *
- * Does NOT modify the original modal module. Imports shared data
- * and rebuilds the modal with booking functionality.
+ * Imported by all 3 in-chat widget variants (grid, carousel, tabs).
  *
- * Uses the Unified Event Architecture for all agent interactions:
- *   - ext_user_action  (tour_inquiry, booking_request_submitted)
- *   - ext_modal_closed (tour_explorer)
- *
- * @version 2.0.0-unified
+ * @version 1.0.0
  * @author Last Frontier Heliskiing / RomAIx
  */
 
-import { LFH_TOURS, LFH_COLORS, LFH_ASSETS, LFH_VIDEOS } from './lfh-tour-explorer-modal.js';
-import { renderBookingForm } from './lfh-tour-booking-form.js';
+// ============================================================================
+// TOUR DATA
+// ============================================================================
+
+export const LFH_TOURS = [
+  {
+    id: '4day',
+    name: '4-Day Tour',
+    subtitle: 'The Quick Getaway',
+    description: 'Perfect for a focused heliski experience. Four days of world-class powder in the remote mountains of Northern BC, with a guaranteed 17,500 meters of vertical skiing. Ideal for those who want maximum adventure in a shorter timeframe.',
+    lodges: ['bell2', 'ripley'],
+    duration: '4 days',
+    durationDays: 4,
+    verticalGuarantee: '17,500m',
+    pricing: {
+      bell2: { early: null, peak: '$10,400 - $12,710', late: null },
+      ripley: { early: null, peak: '$9,300 - $11,310', late: null },
+    },
+    priceFrom: 9300,
+    skillLevel: 'Intermediate-Expert / Expert',
+    heroImage: 'https://www.lastfrontierheli.com/wp-content/uploads/2019/11/heliski-powder-tree-skiing.jpg',
+    thumbnailImage: 'https://www.lastfrontierheli.com/wp-content/uploads/2018/08/04_Last_Frontier_Backgrounder_Series_Day_In_The_Life-510x340.jpg',
+    galleryImages: [
+      'https://www.lastfrontierheli.com/wp-content/uploads/2019/11/heliski-powder-tree-skiing.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2018/09/01-bell-2-lodge-heliski-village.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2018/09/02-ripley-creek-inn-stewart.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2025/12/2025-12-08-Bell2-Emilie_Bowyer-14.jpg',
+    ],
+    videoId: '234398800',
+    bestFor: ['Quick trip', 'First-timers', 'Budget-friendly'],
+  },
+  {
+    id: '5day',
+    name: '5-Day Tour',
+    subtitle: 'The Sweet Spot',
+    description: 'Our most popular package balancing time and value. Five days of helicopter skiing with a 22,000-meter vertical guarantee. Available year-round at both lodges, this tour gives you enough time to settle into the rhythm of mountain life.',
+    lodges: ['bell2', 'ripley'],
+    duration: '5 days',
+    durationDays: 5,
+    verticalGuarantee: '22,000m',
+    pricing: {
+      bell2: { early: '$11,800 - $14,010', peak: '$12,400 - $15,640', late: '$14,440' },
+      ripley: { early: '$10,100 - $12,440', peak: '$11,000 - $13,890', late: '$10,700 - $12,840' },
+    },
+    priceFrom: 10100,
+    skillLevel: 'Intermediate-Expert / Expert',
+    heroImage: 'https://www.lastfrontierheli.com/wp-content/uploads/2019/11/heli-skiing-Canada-adventure.jpg',
+    thumbnailImage: 'https://www.lastfrontierheli.com/wp-content/uploads/2018/08/01_Last_Frontier_Backgrounder_Series_Location-510x339.jpg',
+    galleryImages: [
+      'https://www.lastfrontierheli.com/wp-content/uploads/2019/11/heli-skiing-Canada-adventure.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2018/09/05-bell-2-lodge-dusk.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2018/09/04-guest-room-ripley-creek-inn.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2025/11/1-Canadian-Cam-2025-11-16.jpg',
+    ],
+    videoId: '247898299',
+    bestFor: ['Most popular', 'Great value', 'Year-round'],
+  },
+  {
+    id: '7day',
+    name: '7-Day Tour',
+    subtitle: 'The Full Experience',
+    description: 'The flagship Last Frontier tour. Seven days of heliskiing with a 30,500-meter vertical guarantee delivers the full immersion — maximum skiing, deepest disconnect, and the complete mountain lifestyle. The longer you stay, the better it gets.',
+    lodges: ['bell2', 'ripley'],
+    duration: '7 days',
+    durationDays: 7,
+    verticalGuarantee: '30,500m',
+    pricing: {
+      bell2: { early: '$14,500 - $19,490', peak: '$20,980', late: null },
+      ripley: { early: '$13,600 - $17,300', peak: '$14,500 - $18,630', late: null },
+    },
+    priceFrom: 13600,
+    skillLevel: 'Intermediate-Expert / Expert',
+    heroImage: 'https://www.lastfrontierheli.com/wp-content/uploads/2019/11/huge-alpine-terrain-heliskiing.jpg',
+    thumbnailImage: 'https://www.lastfrontierheli.com/wp-content/uploads/2018/08/03_Last_Frontier_Backgrounder_Series_Terrain-496x350.jpg',
+    galleryImages: [
+      'https://www.lastfrontierheli.com/wp-content/uploads/2019/11/huge-alpine-terrain-heliskiing.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2018/09/06-dining-room-bell-2-lodge.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2018/09/08-outdoor-hot-tub-northern-bc.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2025/08/Last_Frontier_Dave_Silver_T13-2.jpg',
+    ],
+    videoId: '242847858',
+    bestFor: ['Maximum skiing', 'Full immersion', 'Flagship tour'],
+  },
+  {
+    id: 'safari7',
+    name: '7-Day Safari',
+    subtitle: 'Two Lodges, One Epic Journey',
+    description: 'The flagship lodge-to-lodge safari links the high alpine glaciers of the Skeena Mountains (Bell 2) with the steep pitches and tall timber of the Coast Mountains (Ripley Creek). Midweek, power through heli lifts and travel 90km between lodges by helicopter.',
+    lodges: ['both'],
+    duration: '7 days',
+    durationDays: 7,
+    verticalGuarantee: '30,500m',
+    pricing: {
+      safari: { peak: '$20,130' },
+    },
+    priceFrom: 20130,
+    skillLevel: 'Intermediate-Expert',
+    heroImage: 'https://www.lastfrontierheli.com/wp-content/uploads/2018/08/2-heli-skiing-safari-map-canada.jpg',
+    thumbnailImage: 'https://www.lastfrontierheli.com/wp-content/uploads/2018/08/02_Last_Frontier_Backgrounder_Series_Lodging-510x340.jpg',
+    galleryImages: [
+      'https://www.lastfrontierheli.com/wp-content/uploads/2018/08/2-heli-skiing-safari-map-canada.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2018/08/2-bell-2-lodge-skeena-mountains-aerial-context.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2019/10/4-ripley-creek-stewart-bc-aerial-context2.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2018/09/04-bonfire-bell-2-lodge.jpg',
+    ],
+    videoId: '237992712',
+    bestFor: ['Both lodges', 'Dual terrain', 'Ultimate variety'],
+  },
+  {
+    id: 'safari10',
+    name: '10-Day Safari',
+    subtitle: 'The Ultimate Experience',
+    description: 'The ultimate Last Frontier experience: five days at each lodge with a ground transfer in between. A 44,000-meter vertical guarantee delivers more skiing than most people get in years. This is the trip of a lifetime.',
+    lodges: ['both'],
+    duration: '10 days',
+    durationDays: 10,
+    verticalGuarantee: '44,000m',
+    pricing: {
+      safari: { peak: '$23,980' },
+    },
+    priceFrom: 23980,
+    skillLevel: 'Intermediate-Expert',
+    heroImage: 'https://www.lastfrontierheli.com/wp-content/uploads/2018/09/1-largest-heli-skiing-area-Canada.jpg',
+    thumbnailImage: 'https://www.lastfrontierheli.com/wp-content/uploads/2018/08/06_Last_Frontier_Backgrounder_Series_The_Crew-510x340.jpg',
+    galleryImages: [
+      'https://www.lastfrontierheli.com/wp-content/uploads/2018/09/1-largest-heli-skiing-area-Canada.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2018/09/01-bell-2-lodge-heliski-village.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2018/09/01-ocean-boardwalk-stewart-bc.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2018/09/05-dinner-dining-room-stewart.jpg',
+    ],
+    videoId: '256697044',
+    bestFor: ['Trip of a lifetime', 'Maximum vertical', 'Both lodges'],
+  },
+  {
+    id: 'private',
+    name: 'Private Heli',
+    subtitle: 'Your Helicopter, Your Rules',
+    description: 'The most exclusive heliskiing concept: unlimited vertical with your own dedicated A-Star helicopter and two private ACMG-certified guides. You set the pace, plan your perfect day, and ski as much as you want. Includes private transfers and meet-and-greet.',
+    lodges: ['bell2', 'ripley'],
+    duration: '5-7 days',
+    durationDays: 6,
+    verticalGuarantee: 'Unlimited',
+    pricing: {
+      bell2: { early: 'From $89,570', peak: 'From $108,370' },
+      ripley: { early: 'From $83,570', peak: 'From $99,910' },
+    },
+    priceFrom: 83570,
+    skillLevel: 'Intermediate-Expert / Expert',
+    heroImage: 'https://www.lastfrontierheli.com/wp-content/uploads/2018/08/1-deep-alpine-heliski-british-columbia.jpg',
+    thumbnailImage: 'https://www.lastfrontierheli.com/wp-content/uploads/2018/08/05_Last_Frontier_Backgrounder_Series_Safety-510x340.jpg',
+    galleryImages: [
+      'https://www.lastfrontierheli.com/wp-content/uploads/2018/08/1-deep-alpine-heliski-british-columbia.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2024/05/2024-03-28-Bell-2-Lodge-Steve-Rosset-3.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2019/11/remote-wilderness-heliski-village.jpg',
+      'https://www.lastfrontierheli.com/wp-content/uploads/2026/01/2026-01-09-RC-Anne-Boeddinghaus-8.jpg',
+    ],
+    videoId: '251401988',
+    bestFor: ['Exclusive groups', 'Unlimited vertical', 'VIP experience'],
+  },
+];
 
 // ============================================================================
-// HELPERS (mirrored from modal module to avoid deep coupling)
+// SHARED CONSTANTS
+// ============================================================================
+
+export const LFH_COLORS = {
+  primaryRed: '#e62b1e',
+  textPrimary: '#42494e',
+  textSecondary: '#666666',
+  background: '#FFFFFF',
+  infoBox: '#F5F5F5',
+  border: '#E5E8EB',
+  selectedTint: 'rgba(230, 43, 30, 0.04)',
+};
+
+export const LFH_ASSETS = {
+  bgImage: 'https://yannicksegaar.github.io/RomAIx-Logo/LFH_bg_content_and_image_black.png',
+  logo: 'https://yannicksegaar.github.io/RomAIx-Logo/LFH_Logo_FullName_White.svg',
+  videoMask: 'https://www.lastfrontierheli.com/wp-content/themes/lastfrontier/dist/images/videos-img-mask.png',
+};
+
+export const LFH_VIDEOS = {
+  dayInLife: { id: '247898299', title: 'A Day in the Life' },
+  location: { id: '234398800', title: 'Location' },
+  lodging: { id: '237992712', title: 'Lodging' },
+  terrain: { id: '242847858', title: 'Terrain' },
+  safety: { id: '251401988', title: 'Safety' },
+  crew: { id: '256697044', title: 'The Crew' },
+};
+
+const INCLUDED_ITEMS = [
+  'Accommodation at lodge',
+  'All meals by professional chefs',
+  'Certified mountain guides (ACMG/IFMGA)',
+  'Avalanche safety equipment',
+  'Ski and snowboard tuning',
+  'Ground transfers from Terrace airport',
+  'Small group skiing (max 4 guests/guide)',
+];
+
+// ============================================================================
+// HELPER: Lodge display name
 // ============================================================================
 
 function lodgeName(id) {
@@ -37,69 +230,43 @@ function lodgeBadgeColor(lodges) {
   return '#1565C0';
 }
 
+// ============================================================================
+// HELPER: VoiceFlow Agent Communication
+// ============================================================================
+
 function silentVariableUpdate(name, value) {
   try {
     if (window.voiceflow?.chat) {
       window.voiceflow.chat.proactive.push({ type: 'save', payload: { [name]: value } });
     }
-  } catch (e) { /* silent */ }
+  } catch (e) {
+    // Silent fail - VF may not be available in test
+  }
 }
 
-function interactWithAgent(eventName, data) {
+function interactWithAgent(type, payload) {
   try {
-    window.voiceflow?.chat?.interact({
-      type: 'event',
-      payload: {
-        event: { name: eventName },
-        data: data
-      }
-    });
-  } catch (e) { console.log('[TourExplorer] interact error:', e); }
+    if (window.voiceflow?.chat) {
+      window.voiceflow.chat.interact({ type, payload });
+    }
+  } catch (e) {
+    console.log('[TourExplorer] interact:', type, payload);
+  }
 }
 
-const INCLUDED_ITEMS = [
-  'Accommodation at lodge',
-  'All meals by professional chefs',
-  'Certified mountain guides (ACMG/IFMGA)',
-  'Avalanche safety equipment',
-  'Ski and snowboard tuning',
-  'Ground transfers from Terrace airport',
-  'Small group skiing (max 4 guests/guide)',
-];
-
 // ============================================================================
-// MODAL: Open with Booking
+// MODAL: Open
 // ============================================================================
 
-/**
- * @param {string|null} focusTourId - Tour ID to focus on immediately
- * @param {Object} config
- * @param {string} [config.bookingVariant='replace'] - 'replace' or 'slide'
- * @param {string} [config.webhookUrl=''] - n8n webhook endpoint
- * @param {string|null} [config.conversationId]
- * @param {string|null} [config.userId]
- */
-export function openTourExplorerModalWithBookingUnified(focusTourId = null, config = {}) {
+export function openTourExplorerModal(focusTourId = null) {
   if (document.getElementById('lfh-tour-explorer-modal')) return;
-
-  const {
-    bookingVariant = 'replace',
-    webhookUrl = '',
-    conversationId = null,
-    userId = null,
-    initialLodgeFilter = 'all',
-    onCompareLodges = null,
-    onCheckConditions = null,
-  } = config;
 
   // State
   let filteredTours = [...LFH_TOURS];
-  let activeFilters = { lodge: initialLodgeFilter, duration: 'all', skill: 'all' };
+  let activeFilters = { lodge: 'all', duration: 'all', skill: 'all' };
   let compareTours = [];
-  let currentView = 'grid'; // 'grid' | 'detail' | 'compare' | 'booking'
+  let currentView = 'grid'; // 'grid' | 'detail' | 'compare'
   let currentTourId = null;
-  let actionTaken = false;
-  const abortController = new AbortController();
 
   // --- Create Modal Shell ---
   const backdrop = document.createElement('div');
@@ -118,19 +285,21 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
     overflow: hidden; display: flex; flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     animation: lfhte-slideUp 0.4s ease;
-    position: relative;
   `;
 
   // --- Inject Styles ---
   const styleEl = document.createElement('style');
-  styleEl.textContent = buildModalStyles() + buildSlidePanelStyles();
+  styleEl.textContent = buildModalStyles();
   modal.appendChild(styleEl);
 
   // --- Header Bar ---
   const headerBar = document.createElement('div');
   headerBar.className = 'lfhte-header-bar';
   headerBar.innerHTML = `
-    <span class="lfhte-header-title">Tour Explorer</span>
+    <div class="lfhte-header-left">
+      <img src="${LFH_ASSETS.logo}" alt="LFH" class="lfhte-header-logo" />
+      <span class="lfhte-header-title">Tour Explorer</span>
+    </div>
     <button class="lfhte-close-btn" aria-label="Close">&times;</button>
   `;
   modal.appendChild(headerBar);
@@ -138,7 +307,6 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
   // --- Filter Bar ---
   const filterBar = document.createElement('div');
   filterBar.className = 'lfhte-filter-bar';
-  filterBar.id = 'lfhte-filter-bar';
   filterBar.innerHTML = `
     <div class="lfhte-filters-row">
       <div class="lfhte-filter-group">
@@ -170,37 +338,9 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
         </select>
       </div>
       <span class="lfhte-results-count" id="lfhte-results-count">${LFH_TOURS.length} tours</span>
-      ${onCompareLodges ? '<button class="lfhte-compare-lodges-link" id="lfhte-compare-lodges-btn">&#9776; Compare Lodges</button>' : ''}
-      ${onCheckConditions ? '<button class="lfhte-conditions-link" id="lfhte-check-conditions-btn">&#9729; Conditions</button>' : ''}
     </div>
   `;
   modal.appendChild(filterBar);
-
-  // --- Compare Lodges button handler ---
-  if (onCompareLodges) {
-    filterBar.querySelector('#lfhte-compare-lodges-btn')?.addEventListener('click', () => {
-      actionTaken = true;
-      interactWithAgent('ext_user_action', {
-        action: 'tour_compare_lodges',
-        source: 'tour_explorer'
-      });
-      closeModal();
-      setTimeout(() => onCompareLodges(), 350);
-    });
-  }
-
-  // --- Check Conditions button handler ---
-  if (onCheckConditions) {
-    filterBar.querySelector('#lfhte-check-conditions-btn')?.addEventListener('click', () => {
-      actionTaken = true;
-      interactWithAgent('ext_user_action', {
-        action: 'tour_check_conditions',
-        source: 'tour_explorer'
-      });
-      closeModal();
-      setTimeout(() => onCheckConditions(), 350);
-    });
-  }
 
   // --- Main Content Area ---
   const content = document.createElement('div');
@@ -208,49 +348,20 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
   content.id = 'lfhte-content';
   modal.appendChild(content);
 
-  // --- Compare Tray ---
+  // --- Compare Tray (initially hidden) ---
   const compareTray = document.createElement('div');
   compareTray.className = 'lfhte-compare-tray';
   compareTray.id = 'lfhte-compare-tray';
   compareTray.style.display = 'none';
   modal.appendChild(compareTray);
 
-  // --- Slide Panel (for 'slide' variant) ---
-  const slidePanel = document.createElement('div');
-  slidePanel.className = 'lfhte-sp-overlay';
-  slidePanel.id = 'lfhte-sp-overlay';
-  slidePanel.style.display = 'none';
-  slidePanel.innerHTML = `
-    <div class="lfhte-sp-backdrop"></div>
-    <div class="lfhte-sp-panel" id="lfhte-sp-panel">
-      <div class="lfhte-sp-header">
-        <button class="lfhte-sp-back" id="lfhte-sp-back">&larr; Back to Tour</button>
-        <span class="lfhte-sp-title">Booking Request</span>
-      </div>
-      <div class="lfhte-sp-content" id="lfhte-sp-content"></div>
-    </div>
-  `;
-  modal.appendChild(slidePanel);
-
   backdrop.appendChild(modal);
   document.body.appendChild(backdrop);
-
-  // --- Apply initial lodge filter if set ---
-  if (initialLodgeFilter !== 'all') {
-    modal.querySelector('#lfhte-filter-lodge').value = initialLodgeFilter;
-    filteredTours = LFH_TOURS.filter((tour) => {
-      if (initialLodgeFilter === 'both') {
-        return tour.lodges.includes('both');
-      }
-      return tour.lodges.includes(initialLodgeFilter) || tour.lodges.includes('both');
-    });
-    modal.querySelector('#lfhte-results-count').textContent =
-      `${filteredTours.length} tour${filteredTours.length !== 1 ? 's' : ''}`;
-  }
 
   // --- Render Initial Grid ---
   renderTourGrid();
 
+  // Focus on specific tour if requested
   if (focusTourId) {
     const tour = LFH_TOURS.find((t) => t.id === focusTourId);
     if (tour) {
@@ -258,7 +369,8 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
     }
   }
 
-  silentVariableUpdate('ext_last_action', 'tour_explorer_booking_opened');
+  // Silent variable update
+  silentVariableUpdate('ext_last_action', 'tour_explorer_opened');
 
   // ========================================================================
   // RENDER: Tour Grid
@@ -266,8 +378,6 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
 
   function renderTourGrid() {
     currentView = 'grid';
-    filterBar.style.display = '';
-
     const grid = document.createElement('div');
     grid.className = 'lfhte-tour-grid';
 
@@ -329,6 +439,7 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
     content.innerHTML = '';
     content.appendChild(grid);
 
+    // Attach event listeners
     content.querySelectorAll('.lfhte-view-detail').forEach((btn) => {
       btn.addEventListener('click', () => {
         const tour = LFH_TOURS.find((t) => t.id === btn.dataset.tourId);
@@ -342,38 +453,35 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
   }
 
   // ========================================================================
-  // RENDER: Tour Detail (with booking button override)
+  // RENDER: Tour Detail
   // ========================================================================
 
   function renderTourDetail(tour) {
     currentView = 'detail';
     currentTourId = tour.id;
-    filterBar.style.display = '';
     silentVariableUpdate('ext_current_tour', tour.id);
 
     const detail = document.createElement('div');
     detail.className = 'lfhte-detail';
 
+    // Look up video title from LFH_VIDEOS
     const videoEntry = Object.values(LFH_VIDEOS).find((v) => v.id === tour.videoId);
     const videoTitle = videoEntry ? videoEntry.title : 'A Day in the Life';
 
     // Pricing table rows
     let pricingRows = '';
     if (tour.pricing.safari) {
-      pricingRows = `<tr><td>Safari Rate</td><td>${tour.pricing.safari.peak || '\u2014'}</td></tr>`;
+      pricingRows = `<tr><td>Safari Rate</td><td>${tour.pricing.safari.peak || '—'}</td></tr>`;
     } else {
       const lodgeKeys = Object.keys(tour.pricing);
       lodgeKeys.forEach((key) => {
         const p = tour.pricing[key];
-        const lodgeLabel = onCompareLodges
-          ? `<button class="lfhte-lodge-name-link" data-lodge-id="${key}">${lodgeName(key)}</button>`
-          : `<strong>${lodgeName(key)}</strong>`;
         pricingRows += `
           <tr>
-            <td>${lodgeLabel}</td>
-            <td>${p.early || '\u2014'}</td>
-            <td>${p.peak || '\u2014'}</td>
-            <td>${p.late || '\u2014'}</td>
+            <td><strong>${lodgeName(key)}</strong></td>
+            <td>${p.early || '—'}</td>
+            <td>${p.peak || '—'}</td>
+            <td>${p.late || '—'}</td>
           </tr>
         `;
       });
@@ -383,14 +491,21 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
       ? '<tr><th>Rate Type</th><th>Peak Season</th></tr>'
       : '<tr><th>Lodge</th><th>Early (Dec-Jan)</th><th>Peak (Feb-Mar)</th><th>Late (Apr)</th></tr>';
 
+    // Gallery strip
     const galleryHTML = tour.galleryImages
-      .map((img, i) => `<div class="lfhte-gallery-thumb" style="background-image: url('${img}')" data-index="${i}"></div>`)
+      .map(
+        (img, i) => `
+        <div class="lfhte-gallery-thumb" style="background-image: url('${img}')" data-index="${i}"></div>
+      `
+      )
       .join('');
 
+    // Included items
     const includedHTML = INCLUDED_ITEMS.map(
       (item) => `<div class="lfhte-included-item"><span class="lfhte-check-icon">&#10003;</span> ${item}</div>`
     ).join('');
 
+    // Best for badges
     const bestForHTML = tour.bestFor
       .map((bf) => `<span class="lfhte-best-for-badge">${bf}</span>`)
       .join('');
@@ -403,6 +518,7 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
       </div>
 
       <div class="lfhte-detail-scroll">
+        <!-- Hero Media -->
         <div class="lfhte-hero-media" id="lfhte-hero-media">
           <div class="lfhte-hero-image" style="background-image: url('${tour.heroImage}')">
             <button class="lfhte-play-btn" id="lfhte-play-video" data-vimeo="${tour.videoId}">
@@ -412,13 +528,16 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
           </div>
         </div>
 
+        <!-- Gallery Strip -->
         <div class="lfhte-gallery-strip">${galleryHTML}</div>
 
+        <!-- Description -->
         <div class="lfhte-detail-section">
           <p class="lfhte-full-desc">${tour.description}</p>
           <div class="lfhte-best-for">${bestForHTML}</div>
         </div>
 
+        <!-- Quick Stats -->
         <div class="lfhte-stats-bar">
           <div class="lfhte-stat-box">
             <div class="lfhte-stat-value">${tour.duration}</div>
@@ -438,6 +557,7 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
           </div>
         </div>
 
+        <!-- Pricing Table -->
         <div class="lfhte-detail-section">
           <h3 class="lfhte-section-title">Pricing (CAD per person)</h3>
           <table class="lfhte-pricing-table">
@@ -447,20 +567,17 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
           <p class="lfhte-pricing-note">5% GST applies. 20% deposit to confirm. Extra vertical: $210/1,000m.</p>
         </div>
 
+        <!-- What's Included -->
         <div class="lfhte-detail-section">
           <h3 class="lfhte-section-title">What's Included</h3>
           <div class="lfhte-included-grid">${includedHTML}</div>
         </div>
 
+        <!-- Action Buttons -->
         <div class="lfhte-detail-actions">
-          <div class="lfhte-actions-row">
-            <button class="lfhte-btn-primary lfhte-action-book" data-tour-id="${tour.id}">I Want to Book</button>
-            <button class="lfhte-btn-outline lfhte-action-ask" data-tour-id="${tour.id}">Ask About This Tour</button>
-          </div>
-          <div class="lfhte-actions-row">
-            <button class="lfhte-btn-outline lfhte-back-link" id="lfhte-back-link">&larr; Back to All Tours</button>
-            ${onCompareLodges ? '<button class="lfhte-btn-outline lfhte-compare-lodges-detail" id="lfhte-compare-lodges-detail">Compare Lodges</button>' : ''}
-          </div>
+          <button class="lfhte-btn-primary lfhte-action-book" data-tour-id="${tour.id}">I Want to Book</button>
+          <button class="lfhte-btn-outline lfhte-action-ask" data-tour-id="${tour.id}">Ask About This Tour</button>
+          <button class="lfhte-btn-text lfhte-back-link" id="lfhte-back-link">Back to All Tours</button>
         </div>
       </div>
     `;
@@ -472,7 +589,7 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
     detail.querySelector('#lfhte-back-to-grid')?.addEventListener('click', renderTourGrid);
     detail.querySelector('#lfhte-back-link')?.addEventListener('click', renderTourGrid);
 
-    // Gallery thumbnails
+    // Gallery thumbnail click → swap hero image
     detail.querySelectorAll('.lfhte-gallery-thumb').forEach((thumb) => {
       thumb.addEventListener('click', () => {
         const idx = parseInt(thumb.dataset.index);
@@ -485,197 +602,55 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
             <div class="lfhte-hero-label">Watch: ${videoTitle}</div>
           </div>
         `;
+        // Re-attach play button listener
         heroMedia.querySelector('#lfhte-play-video')?.addEventListener('click', (e) => {
+          const vimeoId = e.currentTarget.dataset.vimeo;
           heroMedia.innerHTML = `
             <div class="lfhte-video-embed">
-              <iframe src="https://player.vimeo.com/video/${e.currentTarget.dataset.vimeo}?autoplay=1&title=0&byline=0&portrait=0"
+              <iframe src="https://player.vimeo.com/video/${vimeoId}?autoplay=1&title=0&byline=0&portrait=0"
                 allow="autoplay; fullscreen" allowfullscreen></iframe>
             </div>
           `;
         });
+        // Highlight active thumbnail
         detail.querySelectorAll('.lfhte-gallery-thumb').forEach((t) => (t.style.borderColor = 'transparent'));
         thumb.style.borderColor = LFH_COLORS.primaryRed;
       });
     });
 
     detail.querySelector('#lfhte-play-video')?.addEventListener('click', (e) => {
+      const vimeoId = e.currentTarget.dataset.vimeo;
       const heroMedia = detail.querySelector('#lfhte-hero-media');
       heroMedia.innerHTML = `
         <div class="lfhte-video-embed">
-          <iframe src="https://player.vimeo.com/video/${e.currentTarget.dataset.vimeo}?autoplay=1&title=0&byline=0&portrait=0"
+          <iframe src="https://player.vimeo.com/video/${vimeoId}?autoplay=1&title=0&byline=0&portrait=0"
             allow="autoplay; fullscreen" allowfullscreen></iframe>
         </div>
       `;
     });
 
-    // ===== BOOKING BUTTON (overridden behavior) =====
     detail.querySelector('.lfhte-action-book')?.addEventListener('click', () => {
-      if (bookingVariant === 'slide') {
-        openSlidePanel(tour);
-      } else {
-        openReplaceBooking(tour);
-      }
+      const priceRange = tour.pricing.safari
+        ? tour.pricing.safari.peak
+        : `From $${tour.priceFrom.toLocaleString()}`;
+      interactWithAgent('booking_intent', {
+        tourId: tour.id,
+        tourName: tour.name,
+        lodge: tour.lodges.join(', '),
+        priceRange,
+      });
+      closeModal();
     });
 
     detail.querySelector('.lfhte-action-ask')?.addEventListener('click', () => {
-      interactWithAgent('ext_user_action', {
-        action: 'tour_inquiry',
-        source: 'tour_explorer',
+      interactWithAgent('tour_inquiry', {
         tourId: tour.id,
         tourName: tour.name,
         lodge: tour.lodges.join(', '),
         duration: tour.duration,
       });
-      actionTaken = true;
       closeModal();
     });
-
-    // Compare Lodges - pricing table lodge name links
-    if (onCompareLodges) {
-      detail.querySelectorAll('.lfhte-lodge-name-link').forEach((link) => {
-        link.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const lodgeId = link.dataset.lodgeId;
-          actionTaken = true;
-          interactWithAgent('ext_user_action', {
-            action: 'tour_compare_lodges',
-            source: 'tour_explorer'
-          });
-          closeModal();
-          setTimeout(() => onCompareLodges(lodgeId), 350);
-        });
-      });
-
-      // Compare Lodges - detail actions text button
-      detail.querySelector('#lfhte-compare-lodges-detail')?.addEventListener('click', () => {
-        actionTaken = true;
-        interactWithAgent('ext_user_action', {
-          action: 'tour_compare_lodges',
-          source: 'tour_explorer'
-        });
-        closeModal();
-        setTimeout(() => onCompareLodges(), 350);
-      });
-    }
-  }
-
-  // ========================================================================
-  // BOOKING: Variant A - Replace Content
-  // ========================================================================
-
-  function openReplaceBooking(tour) {
-    currentView = 'booking';
-    filterBar.style.display = 'none';
-    silentVariableUpdate('ext_last_action', 'booking_form_opened');
-
-    const bookingContainer = document.createElement('div');
-    bookingContainer.style.cssText = 'height:100%;overflow-y:auto;';
-
-    // Back button header
-    const backHeader = document.createElement('div');
-    backHeader.style.cssText = `
-      padding: 12px 20px; border-bottom: 1px solid ${LFH_COLORS.border};
-      display: flex; align-items: center; gap: 12px;
-    `;
-    backHeader.innerHTML = `
-      <button class="lfhte-back-btn" id="lfhte-booking-back">&larr; Back to ${tour.name}</button>
-      <span style="font-family:'Nexa Rust Sans Black 2',sans-serif;font-size:14px;font-weight:900;color:${LFH_COLORS.textPrimary};text-transform:uppercase;letter-spacing:1px;">Booking Request</span>
-    `;
-
-    const formContainer = document.createElement('div');
-    formContainer.style.cssText = 'flex:1;overflow-y:auto;';
-
-    bookingContainer.appendChild(backHeader);
-    bookingContainer.appendChild(formContainer);
-
-    content.innerHTML = '';
-    content.appendChild(bookingContainer);
-
-    // Render the form
-    renderBookingForm(formContainer, {
-      tour,
-      webhookUrl,
-      variant: 'replace',
-      conversationId,
-      userId,
-      onSubmitSuccess: (payload) => handleBookingSuccess(tour, payload),
-      onBack: () => renderTourDetail(tour),
-    });
-
-    // Back button
-    backHeader.querySelector('#lfhte-booking-back')?.addEventListener('click', () => {
-      renderTourDetail(tour);
-    });
-  }
-
-  // ========================================================================
-  // BOOKING: Variant B - Slide-in Panel
-  // ========================================================================
-
-  function openSlidePanel(tour) {
-    silentVariableUpdate('ext_last_action', 'booking_form_opened');
-
-    const overlay = modal.querySelector('#lfhte-sp-overlay');
-    const panelContent = modal.querySelector('#lfhte-sp-content');
-    const backBtn = modal.querySelector('#lfhte-sp-back');
-
-    overlay.style.display = 'block';
-    // Trigger animation
-    requestAnimationFrame(() => {
-      overlay.classList.add('open');
-    });
-
-    renderBookingForm(panelContent, {
-      tour,
-      webhookUrl,
-      variant: 'slide',
-      conversationId,
-      userId,
-      onSubmitSuccess: (payload) => handleBookingSuccess(tour, payload),
-      onBack: () => closeSlidePanel(),
-    });
-
-    // Back handler
-    const handleBack = () => closeSlidePanel();
-    backBtn.addEventListener('click', handleBack, { once: true });
-
-    // Backdrop click to close
-    const spBackdrop = overlay.querySelector('.lfhte-sp-backdrop');
-    spBackdrop.addEventListener('click', handleBack, { once: true });
-  }
-
-  function closeSlidePanel() {
-    const overlay = modal.querySelector('#lfhte-sp-overlay');
-    overlay.classList.remove('open');
-    setTimeout(() => {
-      overlay.style.display = 'none';
-      const panelContent = modal.querySelector('#lfhte-sp-content');
-      if (panelContent) panelContent.innerHTML = '';
-    }, 300);
-  }
-
-  // ========================================================================
-  // BOOKING: Post-Submit
-  // ========================================================================
-
-  function handleBookingSuccess(tour, payload) {
-    // Fire interact event for VoiceFlow — no PII (email/name/phone)
-    // PII is sent directly to the webhook by the booking form, not through VoiceFlow
-    interactWithAgent('ext_user_action', {
-      action: 'booking_request_submitted',
-      source: 'tour_explorer',
-      tourId: tour.id,
-      tourName: tour.name,
-      requestType: payload.bookingRequest.requestType,
-    });
-
-    // Suppress duplicate ext_modal_closed since action was already fired
-    actionTaken = true;
-
-    // Auto-close modal after delay
-    setTimeout(() => {
-      closeModal();
-    }, 2500);
   }
 
   // ========================================================================
@@ -685,14 +660,13 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
   function renderCompareView() {
     currentView = 'compare';
     const tours = compareTours.map((id) => LFH_TOURS.find((t) => t.id === id)).filter(Boolean);
+
     silentVariableUpdate('ext_tours_compared', compareTours.join(','));
 
     const compare = document.createElement('div');
     compare.className = 'lfhte-compare';
 
-    const headerCells = tours.map((t) =>
-      `<th class="lfhte-compare-th"><div class="lfhte-compare-tour-name">${t.name}</div><div class="lfhte-compare-tour-sub">${t.subtitle}</div></th>`
-    ).join('');
+    const headerCells = tours.map((t) => `<th class="lfhte-compare-th"><div class="lfhte-compare-tour-name">${t.name}</div><div class="lfhte-compare-tour-sub">${t.subtitle}</div></th>`).join('');
 
     const rows = [
       { label: 'Duration', fn: (t) => t.duration },
@@ -704,9 +678,11 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
     ];
 
     const rowsHTML = rows
-      .map((row) =>
-        `<tr><td class="lfhte-compare-label">${row.label}</td>${tours.map((t) => `<td>${row.fn(t)}</td>`).join('')}</tr>`
-      ).join('');
+      .map(
+        (row) =>
+          `<tr><td class="lfhte-compare-label">${row.label}</td>${tours.map((t) => `<td>${row.fn(t)}</td>`).join('')}</tr>`
+      )
+      .join('');
 
     compare.innerHTML = `
       <div class="lfhte-compare-header">
@@ -757,16 +733,18 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
     }
 
     compareTray.style.display = 'flex';
-    const thumbs = compareTours.map((id) => {
-      const t = LFH_TOURS.find((tour) => tour.id === id);
-      return t
-        ? `<div class="lfhte-tray-thumb">
-             <div class="lfhte-tray-img" style="background-image:url('${t.thumbnailImage}')"></div>
-             <span>${t.name}</span>
-             <button class="lfhte-tray-remove" data-tour-id="${id}">&times;</button>
-           </div>`
-        : '';
-    }).join('');
+    const thumbs = compareTours
+      .map((id) => {
+        const t = LFH_TOURS.find((tour) => tour.id === id);
+        return t
+          ? `<div class="lfhte-tray-thumb">
+               <div class="lfhte-tray-img" style="background-image:url('${t.thumbnailImage}')"></div>
+               <span>${t.name}</span>
+               <button class="lfhte-tray-remove" data-tour-id="${id}">&times;</button>
+             </div>`
+          : '';
+      })
+      .join('');
 
     compareTray.innerHTML = `
       <div class="lfhte-tray-tours">${thumbs}</div>
@@ -789,6 +767,7 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
 
   function applyFilters() {
     filteredTours = LFH_TOURS.filter((tour) => {
+      // Lodge filter
       if (activeFilters.lodge !== 'all') {
         if (activeFilters.lodge === 'both') {
           if (!tour.lodges.includes('both')) return false;
@@ -796,6 +775,8 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
           if (!tour.lodges.includes(activeFilters.lodge) && !tour.lodges.includes('both')) return false;
         }
       }
+
+      // Duration filter
       if (activeFilters.duration !== 'all') {
         if (activeFilters.duration === 'safari') {
           if (!tour.id.startsWith('safari')) return false;
@@ -805,19 +786,22 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
           if (tour.durationDays !== parseInt(activeFilters.duration)) return false;
         }
       }
+
+      // Skill filter
       if (activeFilters.skill !== 'all') {
         if (activeFilters.skill === 'expert' && !tour.skillLevel.includes('Expert')) return false;
         if (activeFilters.skill === 'intermediate' && tour.skillLevel === 'Expert Only') return false;
       }
+
       return true;
     });
 
     silentVariableUpdate('ext_filters_applied', JSON.stringify(activeFilters));
-    modal.querySelector('#lfhte-results-count').textContent =
-      `${filteredTours.length} tour${filteredTours.length !== 1 ? 's' : ''}`;
+    modal.querySelector('#lfhte-results-count').textContent = `${filteredTours.length} tour${filteredTours.length !== 1 ? 's' : ''}`;
     renderTourGrid();
   }
 
+  // Filter event listeners
   modal.querySelector('#lfhte-filter-lodge')?.addEventListener('change', (e) => {
     activeFilters.lodge = e.target.value;
     silentVariableUpdate('ext_current_lodge', e.target.value);
@@ -839,38 +823,32 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
   // ========================================================================
 
   function closeModal() {
-    if (!actionTaken) {
-      interactWithAgent('ext_modal_closed', {
-        modal: 'tour_explorer',
-        lastViewed: currentTourId,
-        toursCompared: compareTours,
-      });
-    }
+    interactWithAgent('tour_explorer_closed', {
+      lastViewed: currentTourId,
+      toursCompared: compareTours,
+    });
 
-    abortController.abort();
     backdrop.style.animation = 'lfhte-fadeOut 0.3s ease forwards';
-    setTimeout(() => backdrop.remove(), 300);
+    setTimeout(() => {
+      backdrop.remove();
+    }, 300);
   }
 
+  // Close handlers
   headerBar.querySelector('.lfhte-close-btn')?.addEventListener('click', closeModal);
   backdrop.addEventListener('click', (e) => {
     if (e.target === backdrop) closeModal();
   });
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && document.contains(backdrop)) {
-      // Close slide panel first if open
-      const overlay = document.querySelector('#lfhte-sp-overlay.open');
-      if (overlay) {
-        closeSlidePanel();
-      } else {
-        closeModal();
-      }
+  document.addEventListener('keydown', function escHandler(e) {
+    if (e.key === 'Escape' && document.getElementById('lfh-tour-explorer-modal')) {
+      closeModal();
+      document.removeEventListener('keydown', escHandler);
     }
-  }, { signal: abortController.signal });
+  });
 }
 
 // ============================================================================
-// STYLES (same as original modal)
+// STYLES
 // ============================================================================
 
 function buildModalStyles() {
@@ -880,9 +858,12 @@ function buildModalStyles() {
 @font-face {
   font-family: 'Nexa Rust Sans Black 2';
   src: url('https://yannicksegaar.github.io/lastfrontier-voiceflow-styles/fonts/NexaRustSansBlack2.woff2') format('woff2');
-  font-weight: 900; font-style: normal; font-display: swap;
+  font-weight: 900;
+  font-style: normal;
+  font-display: swap;
 }
 
+/* Animations */
 @keyframes lfhte-fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes lfhte-fadeOut { from { opacity: 1; } to { opacity: 0; } }
 @keyframes lfhte-slideUp {
@@ -890,13 +871,17 @@ function buildModalStyles() {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Header Bar */
 .lfhte-header-bar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px; background: ${LFH_COLORS.textPrimary}; flex-shrink: 0;
+  padding: 14px 20px; background: ${LFH_COLORS.textPrimary};
+  flex-shrink: 0;
 }
+.lfhte-header-left { display: flex; align-items: center; gap: 12px; }
+.lfhte-header-logo { height: 28px; filter: brightness(0) invert(1); }
 .lfhte-header-title {
   font-family: 'Nexa Rust Sans Black 2', sans-serif;
-  font-size: 20px; font-weight: 900; color: #fff;
+  font-size: 16px; font-weight: 900; color: #fff;
   text-transform: uppercase; letter-spacing: 2px;
 }
 .lfhte-close-btn {
@@ -908,11 +893,14 @@ function buildModalStyles() {
 }
 .lfhte-close-btn:hover { background: rgba(255,255,255,0.15); }
 
+/* Filter Bar */
 .lfhte-filter-bar {
   padding: 12px 20px; background: ${LFH_COLORS.infoBox};
   border-bottom: 1px solid ${LFH_COLORS.border}; flex-shrink: 0;
 }
-.lfhte-filters-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.lfhte-filters-row {
+  display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
+}
 .lfhte-filter-group { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 130px; }
 .lfhte-filter-group label {
   font-family: 'Inter', sans-serif; font-size: 10px;
@@ -931,35 +919,8 @@ function buildModalStyles() {
   font-weight: 600; color: ${LFH_COLORS.textSecondary};
   white-space: nowrap; margin-left: auto;
 }
-.lfhte-compare-lodges-link {
-  padding: 6px 14px; background: ${LFH_COLORS.infoBox};
-  border: 1.5px solid ${LFH_COLORS.border}; border-radius: 20px;
-  font-family: 'Inter', sans-serif; font-size: 11px;
-  font-weight: 600; color: ${LFH_COLORS.textSecondary};
-  cursor: pointer; transition: all 0.2s; white-space: nowrap;
-}
-.lfhte-compare-lodges-link:hover {
-  border-color: ${LFH_COLORS.primaryRed}; color: ${LFH_COLORS.primaryRed};
-}
-.lfhte-conditions-link {
-  padding: 6px 14px; background: ${LFH_COLORS.infoBox};
-  border: 1.5px solid ${LFH_COLORS.border}; border-radius: 20px;
-  font-family: 'Inter', sans-serif; font-size: 11px;
-  font-weight: 600; color: ${LFH_COLORS.textSecondary};
-  cursor: pointer; transition: all 0.2s; white-space: nowrap;
-}
-.lfhte-conditions-link:hover {
-  border-color: ${LFH_COLORS.primaryRed}; color: ${LFH_COLORS.primaryRed};
-}
-.lfhte-lodge-name-link {
-  background: none; border: none; padding: 0;
-  font-weight: 700; font-size: inherit; font-family: inherit;
-  color: ${LFH_COLORS.primaryRed}; cursor: pointer;
-  text-decoration: underline; text-decoration-style: dotted;
-  text-underline-offset: 2px; transition: color 0.2s;
-}
-.lfhte-lodge-name-link:hover { color: #c4221a; }
 
+/* Content Area */
 .lfhte-content {
   flex: 1; overflow-y: auto; padding: 20px;
   font-family: 'Inter', sans-serif;
@@ -968,12 +929,19 @@ function buildModalStyles() {
 .lfhte-content::-webkit-scrollbar-track { background: ${LFH_COLORS.infoBox}; }
 .lfhte-content::-webkit-scrollbar-thumb { background: ${LFH_COLORS.border}; border-radius: 3px; }
 
-.lfhte-tour-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-@media (max-width: 700px) { .lfhte-tour-grid { grid-template-columns: 1fr; } }
+/* Tour Grid */
+.lfhte-tour-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;
+}
+@media (max-width: 700px) {
+  .lfhte-tour-grid { grid-template-columns: 1fr; }
+}
 
+/* Tour Card */
 .lfhte-tour-card {
   border: 1.5px solid ${LFH_COLORS.border}; border-radius: 10px;
-  overflow: hidden; transition: all 0.2s ease; background: #fff;
+  overflow: hidden; transition: all 0.2s ease;
+  background: #fff;
 }
 .lfhte-tour-card:hover {
   border-color: ${LFH_COLORS.primaryRed};
@@ -998,7 +966,8 @@ function buildModalStyles() {
   color: ${LFH_COLORS.primaryRed}; margin: 0 0 8px;
 }
 .lfhte-card-stats {
-  font-size: 11px; color: ${LFH_COLORS.textSecondary}; margin-bottom: 6px;
+  font-size: 11px; color: ${LFH_COLORS.textSecondary};
+  margin-bottom: 6px;
 }
 .lfhte-stat-divider { margin: 0 6px; opacity: 0.4; }
 .lfhte-card-price {
@@ -1013,6 +982,7 @@ function buildModalStyles() {
 }
 .lfhte-card-actions { display: flex; gap: 8px; }
 
+/* Buttons */
 .lfhte-btn-primary {
   flex: 1; padding: 10px 16px;
   background: ${LFH_COLORS.primaryRed}; color: #fff;
@@ -1026,24 +996,36 @@ function buildModalStyles() {
   background: #fff; color: ${LFH_COLORS.textPrimary};
   border: 1.5px solid ${LFH_COLORS.border}; border-radius: 6px;
   font-family: 'Inter', sans-serif; font-size: 12px;
-  font-weight: 600; cursor: pointer; transition: all 0.2s; text-align: center;
+  font-weight: 600; cursor: pointer; transition: all 0.2s;
+  text-align: center;
 }
-.lfhte-btn-outline:hover { border-color: ${LFH_COLORS.primaryRed}; color: ${LFH_COLORS.primaryRed}; }
+.lfhte-btn-outline:hover {
+  border-color: ${LFH_COLORS.primaryRed};
+  color: ${LFH_COLORS.primaryRed};
+}
 .lfhte-btn-outline.active {
   background: ${LFH_COLORS.selectedTint};
-  border-color: ${LFH_COLORS.primaryRed}; color: ${LFH_COLORS.primaryRed};
+  border-color: ${LFH_COLORS.primaryRed};
+  color: ${LFH_COLORS.primaryRed};
 }
 .lfhte-btn-text {
   background: transparent; border: none;
   color: ${LFH_COLORS.textSecondary}; font-family: 'Inter', sans-serif;
-  font-size: 12px; cursor: pointer; padding: 8px; transition: color 0.2s;
+  font-size: 12px; cursor: pointer; padding: 8px;
+  transition: color 0.2s;
 }
 .lfhte-btn-text:hover { color: ${LFH_COLORS.primaryRed}; }
 
-.lfhte-no-results { grid-column: 1 / -1; text-align: center; padding: 60px 20px; }
+/* No Results */
+.lfhte-no-results {
+  grid-column: 1 / -1; text-align: center; padding: 60px 20px;
+}
 .lfhte-no-results-icon { font-size: 48px; margin-bottom: 12px; }
-.lfhte-no-results p { font-size: 16px; color: ${LFH_COLORS.textSecondary}; margin-bottom: 16px; }
+.lfhte-no-results p {
+  font-size: 16px; color: ${LFH_COLORS.textSecondary}; margin-bottom: 16px;
+}
 
+/* Detail View */
 .lfhte-detail { display: flex; flex-direction: column; height: 100%; }
 .lfhte-detail-header {
   display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
@@ -1064,9 +1046,12 @@ function buildModalStyles() {
   margin: 0; font-family: 'Nexa Rust Sans Black 2', sans-serif;
   text-transform: uppercase; letter-spacing: 1px;
 }
-.lfhte-detail-subtitle { font-size: 13px; color: ${LFH_COLORS.textSecondary}; font-style: italic; }
+.lfhte-detail-subtitle {
+  font-size: 13px; color: ${LFH_COLORS.textSecondary}; font-style: italic;
+}
 .lfhte-detail-scroll { flex: 1; overflow-y: auto; }
 
+/* Hero Media */
 .lfhte-hero-media { margin-bottom: 12px; }
 .lfhte-hero-image {
   width: 100%; height: 280px; background-size: cover;
@@ -1086,8 +1071,12 @@ function buildModalStyles() {
   cursor: pointer; display: flex; align-items: center;
   justify-content: center; transition: all 0.2s;
 }
-.lfhte-play-btn:hover { background: ${LFH_COLORS.primaryRed}; transform: scale(1.1); }
-.lfhte-play-btn:hover .lfhte-play-triangle { border-left-color: #fff; }
+.lfhte-play-btn:hover {
+  background: ${LFH_COLORS.primaryRed}; transform: scale(1.1);
+}
+.lfhte-play-btn:hover .lfhte-play-triangle {
+  border-left-color: #fff;
+}
 .lfhte-play-triangle {
   width: 0; height: 0;
   border-left: 18px solid ${LFH_COLORS.textPrimary};
@@ -1106,6 +1095,7 @@ function buildModalStyles() {
 }
 .lfhte-video-embed iframe { width: 100%; height: 100%; border: none; }
 
+/* Gallery Strip */
 .lfhte-gallery-strip {
   display: flex; gap: 8px; overflow-x: auto;
   padding-bottom: 8px; margin-bottom: 16px;
@@ -1119,6 +1109,7 @@ function buildModalStyles() {
 }
 .lfhte-gallery-thumb:hover { border-color: ${LFH_COLORS.primaryRed}; }
 
+/* Detail Sections */
 .lfhte-detail-section { margin-bottom: 20px; }
 .lfhte-section-title {
   font-size: 14px; font-weight: 700; color: ${LFH_COLORS.textPrimary};
@@ -1134,22 +1125,28 @@ function buildModalStyles() {
   font-size: 11px; font-weight: 600; color: ${LFH_COLORS.textSecondary};
 }
 
+/* Stats Bar */
 .lfhte-stats-bar {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+  margin-bottom: 20px;
 }
 .lfhte-stat-box {
   text-align: center; padding: 12px 8px;
   background: ${LFH_COLORS.infoBox}; border-radius: 8px;
 }
 .lfhte-stat-value {
-  font-size: 14px; font-weight: 700; color: ${LFH_COLORS.primaryRed}; margin-bottom: 2px;
+  font-size: 14px; font-weight: 700; color: ${LFH_COLORS.primaryRed};
+  margin-bottom: 2px;
 }
 .lfhte-stat-label {
   font-size: 10px; color: ${LFH_COLORS.textSecondary};
   text-transform: uppercase; letter-spacing: 0.3px;
 }
 
-.lfhte-pricing-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+/* Pricing Table */
+.lfhte-pricing-table {
+  width: 100%; border-collapse: collapse; font-size: 12px;
+}
 .lfhte-pricing-table th {
   padding: 10px 8px; background: ${LFH_COLORS.textPrimary};
   color: #fff; text-align: left; font-weight: 600;
@@ -1165,20 +1162,24 @@ function buildModalStyles() {
   margin-top: 8px; font-style: italic;
 }
 
-.lfhte-included-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+/* Included Grid */
+.lfhte-included-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
+}
 .lfhte-included-item {
   font-size: 12px; color: ${LFH_COLORS.textPrimary};
   display: flex; align-items: center; gap: 6px;
 }
 .lfhte-check-icon { color: #2E7D32; font-weight: 700; }
 
+/* Detail Actions */
 .lfhte-detail-actions {
-  display: flex; flex-direction: column; gap: 10px;
+  display: flex; gap: 10px; align-items: center;
   padding: 16px 0; border-top: 1px solid ${LFH_COLORS.border};
-  margin-top: 8px;
+  margin-top: 8px; flex-wrap: wrap;
 }
-.lfhte-actions-row { display: flex; gap: 10px; }
 
+/* Compare Tray */
 .lfhte-compare-tray {
   display: flex; align-items: center; gap: 12px;
   padding: 12px 20px; background: ${LFH_COLORS.textPrimary};
@@ -1209,6 +1210,7 @@ function buildModalStyles() {
 }
 .lfhte-tray-compare-btn:hover { background: #c4221a; }
 
+/* Compare View */
 .lfhte-compare { display: flex; flex-direction: column; height: 100%; }
 .lfhte-compare-header {
   display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
@@ -1217,20 +1219,27 @@ function buildModalStyles() {
   font-size: 18px; font-weight: 700; color: ${LFH_COLORS.textPrimary}; margin: 0;
 }
 .lfhte-compare-scroll { flex: 1; overflow: auto; }
-.lfhte-compare-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.lfhte-compare-table {
+  width: 100%; border-collapse: collapse; font-size: 13px;
+}
 .lfhte-compare-table th, .lfhte-compare-table td {
   padding: 12px; border: 1px solid ${LFH_COLORS.border};
   text-align: left; vertical-align: top;
 }
 .lfhte-compare-th { background: ${LFH_COLORS.infoBox}; min-width: 160px; }
-.lfhte-compare-tour-name { font-size: 14px; font-weight: 700; color: ${LFH_COLORS.primaryRed}; }
-.lfhte-compare-tour-sub { font-size: 11px; color: ${LFH_COLORS.textSecondary}; margin-top: 2px; }
+.lfhte-compare-tour-name {
+  font-size: 14px; font-weight: 700; color: ${LFH_COLORS.primaryRed};
+}
+.lfhte-compare-tour-sub {
+  font-size: 11px; color: ${LFH_COLORS.textSecondary}; margin-top: 2px;
+}
 .lfhte-compare-label { font-weight: 600; background: ${LFH_COLORS.infoBox}; white-space: nowrap; }
 .lfhte-compare-actions {
   display: flex; gap: 10px; padding: 16px 0;
   border-top: 1px solid ${LFH_COLORS.border}; margin-top: 8px;
 }
 
+/* Mobile breakpoint */
 @media (max-width: 500px) {
   .lfhte-stats-bar { grid-template-columns: repeat(2, 1fr); }
   .lfhte-pricing-table { display: block; overflow-x: auto; }
@@ -1240,73 +1249,6 @@ function buildModalStyles() {
   .lfhte-filter-group { min-width: 100px; }
   .lfhte-filter-group select { padding: 6px 8px; }
   .lfhte-included-grid { grid-template-columns: 1fr; }
-}
-`;
-}
-
-// ============================================================================
-// SLIDE PANEL STYLES
-// ============================================================================
-
-function buildSlidePanelStyles() {
-  return `
-/* Slide Panel Overlay */
-.lfhte-sp-overlay {
-  position: absolute; inset: 0; z-index: 100;
-  display: flex; pointer-events: none;
-}
-.lfhte-sp-overlay.open { pointer-events: auto; }
-
-.lfhte-sp-backdrop {
-  flex: 1; background: rgba(0,0,0,0);
-  transition: background 0.3s ease;
-}
-.lfhte-sp-overlay.open .lfhte-sp-backdrop {
-  background: rgba(0,0,0,0.3);
-}
-
-.lfhte-sp-panel {
-  width: 70%; max-width: 480px; height: 100%;
-  background: ${LFH_COLORS.background};
-  box-shadow: -4px 0 20px rgba(0,0,0,0.15);
-  display: flex; flex-direction: column;
-  transform: translateX(100%);
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  overflow: hidden;
-}
-.lfhte-sp-overlay.open .lfhte-sp-panel {
-  transform: translateX(0);
-}
-
-.lfhte-sp-header {
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px 16px; background: ${LFH_COLORS.textPrimary};
-  flex-shrink: 0;
-}
-.lfhte-sp-back {
-  background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2);
-  border-radius: 6px; padding: 6px 12px;
-  font-family: 'Inter', sans-serif; font-size: 11px;
-  font-weight: 700; color: #fff; cursor: pointer;
-  transition: all 0.2s; text-transform: uppercase;
-}
-.lfhte-sp-back:hover { background: rgba(255,255,255,0.2); }
-.lfhte-sp-title {
-  font-family: 'Nexa Rust Sans Black 2', sans-serif;
-  font-size: 13px; font-weight: 900; color: #fff;
-  text-transform: uppercase; letter-spacing: 1.5px;
-}
-
-.lfhte-sp-content {
-  flex: 1; overflow-y: auto;
-}
-.lfhte-sp-content::-webkit-scrollbar { width: 5px; }
-.lfhte-sp-content::-webkit-scrollbar-thumb {
-  background: ${LFH_COLORS.border}; border-radius: 3px;
-}
-
-@media (max-width: 600px) {
-  .lfhte-sp-panel { width: 100%; max-width: 100%; }
 }
 `;
 }

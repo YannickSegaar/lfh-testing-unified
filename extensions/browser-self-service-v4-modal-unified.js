@@ -14,7 +14,7 @@
  */
 
 // Import shared constants from tour explorer
-import { LFH_COLORS, LFH_ASSETS } from '../lfh-tour-explorer-modal.js';
+import { LFH_COLORS, LFH_ASSETS } from './lfh-tour-explorer-modal.js';
 import { openTourExplorerModalWithBookingUnified } from './lfh-tour-explorer-modal-booking-unified.js';
 import { openLodgeCompareModal } from './lfh-lodge-compare-modal-v2-unified.js';
 

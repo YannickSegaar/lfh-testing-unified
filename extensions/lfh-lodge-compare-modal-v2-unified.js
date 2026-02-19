@@ -15,7 +15,7 @@
  */
 
 // Import shared constants from tour explorer
-import { LFH_COLORS, LFH_ASSETS } from '../lfh-tour-explorer-modal.js';
+import { LFH_COLORS, LFH_ASSETS } from './lfh-tour-explorer-modal.js';
 // Import tour explorer for lodge→tour handoff
 import { openTourExplorerModalWithBookingUnified } from './lfh-tour-explorer-modal-booking-unified.js';
 // Import weather modal for cross-navigation
