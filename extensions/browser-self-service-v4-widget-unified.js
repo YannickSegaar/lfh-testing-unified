@@ -1,9 +1,6 @@
 /**
- * Last Frontier Browser Self-Service Widget
- * VoiceFlow-Ready — Unified Event Architecture
- *
- * Self-contained version for VoiceFlow widget (no ES module imports).
- * Cross-modal navigation uses window.__lfh namespace.
+ * Last Frontier Browser Self-Service Widget v4.0
+ * Unified Event Architecture
  *
  * Renders the full v3-style inline UI (header, tabs, video grid, FAQ accordion,
  * resource cards) inside the VoiceFlow chat. When the user interacts with any
@@ -12,65 +9,17 @@
  *
  * Tab switching still works inline — only content interactions trigger the modal.
  *
- * @version 4.0.0-vf
+ * @version 4.0.0-unified
  * @author Last Frontier Heliskiing / RomAIx
  */
 
-// ============================================================================
-// SHARED CONSTANTS (inlined — no ES module import)
-// ============================================================================
-
-const LFH_COLORS_SSW = {
-  primaryRed: '#e62b1e',
-  textPrimary: '#42494e',
-  textSecondary: '#666666',
-  background: '#FFFFFF',
-  infoBox: '#F5F5F5',
-  border: '#E5E8EB',
-  selectedTint: 'rgba(230, 43, 30, 0.04)',
-};
-
-const LFH_ASSETS_SSW = {
-  bgImage: 'https://yannicksegaar.github.io/RomAIx-Logo/LFH_bg_content_and_image_black.png',
-  logo: 'https://yannicksegaar.github.io/RomAIx-Logo/LFH_Logo_FullName_White.svg',
-  videoMask: 'https://www.lastfrontierheli.com/wp-content/themes/lastfrontier/dist/images/videos-img-mask.png',
-};
-
-// ============================================================================
-// CROSS-MODAL NAMESPACE
-// ============================================================================
-
-window.__lfh = window.__lfh || {};
-
-// ============================================================================
-// HELPER: VoiceFlow Agent Communication
-// ============================================================================
-
-function _sswSilentVariableUpdate(name, value) {
-  try {
-    if (window.voiceflow?.chat) {
-      window.voiceflow.chat.proactive.push({ type: 'save', payload: { [name]: value } });
-    }
-  } catch (e) { /* silent */ }
-}
-
-function _sswInteractWithAgent(eventName, data) {
-  try {
-    window.voiceflow?.chat?.interact({
-      type: 'event',
-      payload: {
-        event: { name: eventName },
-        data: data
-      }
-    });
-  } catch (e) { console.log('[BrowserSelfService] interact error:', e); }
-}
+import { LFH_COLORS, LFH_ASSETS, openBrowserSelfServiceModal } from './browser-self-service-v4-modal-unified.js';
 
 // ============================================================================
 // INLINE SVG ICONS FOR RESOURCES
 // ============================================================================
 
-const _sswResourceIcons = {
+const resourceIcons = {
   faq: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <circle cx="12" cy="12" r="10"/>
     <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
@@ -97,7 +46,7 @@ const _sswResourceIcons = {
 // DATA (same as v3, needed for rendering inline preview)
 // ============================================================================
 
-const _sswVideos = [
+const videos = [
   {
     id: 'location',
     episode: 1,
@@ -148,7 +97,7 @@ const _sswVideos = [
   },
 ];
 
-const _sswFaqs = [
+const faqs = [
   {
     id: 'skill',
     question: 'How good do I have to be?',
@@ -187,7 +136,7 @@ const _sswFaqs = [
   },
 ];
 
-const _sswResources = [
+const resources = [
   {
     id: 'faq',
     title: 'FAQ for First-Timers',
@@ -219,38 +168,43 @@ const _sswResources = [
 ];
 
 // ============================================================================
-// RENDER WIDGET (inline in VoiceFlow chat)
+// EXTENSION REGISTRATION
 // ============================================================================
 
-function _sswRenderWidget(element, payload) {
-  const C = LFH_COLORS_SSW;
-  const A = LFH_ASSETS_SSW;
+export const LastFrontierBrowserSelfService_v4_Unified = {
+  name: 'LastFrontierBrowserSelfService_v4_Unified',
+  type: 'response',
 
-  const {
-    formTitle = 'Discover Heliskiing',
-    formSubtitle = 'Explore our videos, FAQs, and resources',
-    initialTab = 'videos',
-    animateIn = true,
-  } = payload;
+  match: ({ trace }) =>
+    trace.type === 'ext_browserSelfService_v4_unified' ||
+    trace.payload?.name === 'ext_browserSelfService_v4_unified',
 
-  let currentTab = initialTab;
+  render: ({ trace, element }) => {
+    const {
+      formTitle = 'Discover Heliskiing',
+      formSubtitle = 'Explore our videos, FAQs, and resources',
+      initialTab = 'videos',
+      animateIn = true,
+    } = trace.payload || {};
 
-  element.innerHTML = '';
+    let currentTab = initialTab;
 
-  const container = document.createElement('div');
-  container.className = 'lfh-ss-v4';
+    element.innerHTML = '';
 
-  if (animateIn) {
-    container.style.opacity = '0';
-    container.style.transform = 'translateY(10px)';
-    container.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-  }
+    const container = document.createElement('div');
+    container.className = 'lfh-ss-v4';
 
-  // ==================================================================
-  // STYLES & HTML (v3 layout, no logo)
-  // ==================================================================
+    if (animateIn) {
+      container.style.opacity = '0';
+      container.style.transform = 'translateY(10px)';
+      container.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
+    }
 
-  container.innerHTML = `
+    // ==================================================================
+    // STYLES & HTML (v3 layout, no logo)
+    // ==================================================================
+
+    container.innerHTML = `
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
 
@@ -265,7 +219,7 @@ function _sswRenderWidget(element, payload) {
 .lfh-ss-v4 {
   width: 100%;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: ${C.background};
+  background: ${LFH_COLORS.background};
   border-radius: 8px;
   overflow: hidden;
   box-sizing: border-box;
@@ -278,7 +232,7 @@ function _sswRenderWidget(element, payload) {
 /* ===== HEADER ===== */
 .lfh-ss-v4-header {
   position: relative;
-  background-image: url('${A.bgImage}');
+  background-image: url('${LFH_ASSETS.bgImage}');
   background-size: cover;
   background-position: center;
   text-align: center;
@@ -327,8 +281,8 @@ function _sswRenderWidget(element, payload) {
 /* ===== TAB NAVIGATION ===== */
 .lfh-ss-v4-tabs {
   display: flex;
-  background: ${C.infoBox};
-  border-bottom: 1px solid ${C.border};
+  background: ${LFH_COLORS.infoBox};
+  border-bottom: 1px solid ${LFH_COLORS.border};
   padding: 0;
   margin: 0;
   list-style: none;
@@ -341,7 +295,7 @@ function _sswRenderWidget(element, payload) {
   font-family: 'Inter', sans-serif;
   font-size: 11px;
   font-weight: 700;
-  color: ${C.textSecondary};
+  color: ${LFH_COLORS.textSecondary};
   cursor: pointer;
   border: none;
   background: transparent;
@@ -353,13 +307,13 @@ function _sswRenderWidget(element, payload) {
 
 .lfh-ss-v4-tab:hover {
   background: #eee;
-  color: ${C.textPrimary};
+  color: ${LFH_COLORS.textPrimary};
 }
 
 .lfh-ss-v4-tab.active {
-  color: ${C.primaryRed};
-  border-bottom-color: ${C.primaryRed};
-  background: ${C.background};
+  color: ${LFH_COLORS.primaryRed};
+  border-bottom-color: ${LFH_COLORS.primaryRed};
+  background: ${LFH_COLORS.background};
 }
 
 /* ===== CONTENT AREA ===== */
@@ -367,7 +321,7 @@ function _sswRenderWidget(element, payload) {
   padding: 16px;
   max-height: 420px;
   overflow-y: auto;
-  background: ${C.background};
+  background: ${LFH_COLORS.background};
 }
 
 .lfh-ss-v4-panel {
@@ -389,14 +343,14 @@ function _sswRenderWidget(element, payload) {
   text-align: center;
   margin-bottom: 16px;
   padding-bottom: 12px;
-  border-bottom: 1px solid ${C.border};
+  border-bottom: 1px solid ${LFH_COLORS.border};
 }
 
 .lfh-ss-v4-dig-deeper-title {
   font-family: 'Nexa Rust Sans Black 2', 'Inter', sans-serif;
   font-size: 14px;
   font-weight: 900;
-  color: ${C.textPrimary};
+  color: ${LFH_COLORS.textPrimary};
   text-transform: uppercase;
   letter-spacing: 2px;
   margin: 0 0 6px 0;
@@ -406,7 +360,7 @@ function _sswRenderWidget(element, payload) {
   font-family: 'Inter', sans-serif;
   font-size: 11px;
   font-weight: 400;
-  color: ${C.textSecondary};
+  color: ${LFH_COLORS.textSecondary};
   line-height: 1.5;
   margin: 0;
   max-width: 90%;
@@ -437,7 +391,7 @@ function _sswRenderWidget(element, payload) {
   content: '';
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background-image: url('${A.videoMask}');
+  background-image: url('${LFH_ASSETS.videoMask}');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -448,7 +402,7 @@ function _sswRenderWidget(element, payload) {
 .lfh-ss-v4-video-card:hover {
   transform: scale(1.02);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-color: ${C.primaryRed};
+  border-color: ${LFH_COLORS.primaryRed};
 }
 
 .lfh-ss-v4-video-overlay {
@@ -494,8 +448,8 @@ function _sswRenderWidget(element, payload) {
 
 .lfh-ss-v4-video-card:hover .lfh-ss-v4-play-icon {
   transform: translate(-50%, -50%) scale(1.05);
-  background: ${C.primaryRed};
-  border-color: ${C.primaryRed};
+  background: ${LFH_COLORS.primaryRed};
+  border-color: ${LFH_COLORS.primaryRed};
   box-shadow: 0 4px 12px rgba(230, 43, 30, 0.5);
 }
 
@@ -516,7 +470,7 @@ function _sswRenderWidget(element, payload) {
 }
 
 .lfh-ss-v4-faq-item {
-  border: 1.5px solid ${C.border};
+  border: 1.5px solid ${LFH_COLORS.border};
   border-radius: 8px;
   overflow: hidden;
   transition: border-color 0.2s ease;
@@ -533,25 +487,25 @@ function _sswRenderWidget(element, payload) {
   justify-content: space-between;
   width: 100%;
   padding: 12px 14px;
-  background: ${C.background};
+  background: ${LFH_COLORS.background};
   border: none;
   font-family: 'Inter', sans-serif;
   font-size: 13px;
   font-weight: 600;
-  color: ${C.textPrimary};
+  color: ${LFH_COLORS.textPrimary};
   cursor: pointer;
   text-align: left;
   transition: background 0.2s ease;
 }
 
 .lfh-ss-v4-faq-question:hover {
-  background: ${C.infoBox};
+  background: ${LFH_COLORS.infoBox};
 }
 
 .lfh-ss-v4-faq-icon {
   font-size: 16px;
   font-weight: 700;
-  color: ${C.primaryRed};
+  color: ${LFH_COLORS.primaryRed};
   flex-shrink: 0;
   margin-left: 10px;
 }
@@ -568,8 +522,8 @@ function _sswRenderWidget(element, payload) {
   align-items: center;
   gap: 12px;
   padding: 12px 14px;
-  background: ${C.background};
-  border: 1.5px solid ${C.border};
+  background: ${LFH_COLORS.background};
+  border: 1.5px solid ${LFH_COLORS.border};
   border-radius: 8px;
   text-decoration: none;
   cursor: pointer;
@@ -577,14 +531,14 @@ function _sswRenderWidget(element, payload) {
 }
 
 .lfh-ss-v4-resource-card:hover {
-  border-color: ${C.primaryRed};
-  border-left: 3px solid ${C.primaryRed};
-  background: ${C.selectedTint};
+  border-color: ${LFH_COLORS.primaryRed};
+  border-left: 3px solid ${LFH_COLORS.primaryRed};
+  background: ${LFH_COLORS.selectedTint};
 }
 
 .lfh-ss-v4-resource-icon {
   width: 36px; height: 36px;
-  background: ${C.primaryRed};
+  background: ${LFH_COLORS.primaryRed};
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -605,18 +559,18 @@ function _sswRenderWidget(element, payload) {
 .lfh-ss-v4-resource-title {
   font-size: 13px;
   font-weight: 600;
-  color: ${C.textPrimary};
+  color: ${LFH_COLORS.textPrimary};
   margin: 0 0 2px 0;
 }
 
 .lfh-ss-v4-resource-desc {
   font-size: 11px;
-  color: ${C.textSecondary};
+  color: ${LFH_COLORS.textSecondary};
   margin: 0;
 }
 
 .lfh-ss-v4-resource-arrow {
-  color: ${C.primaryRed};
+  color: ${LFH_COLORS.primaryRed};
   font-size: 16px;
   flex-shrink: 0;
 }
@@ -624,27 +578,27 @@ function _sswRenderWidget(element, payload) {
 /* ===== FOOTER ===== */
 .lfh-ss-v4-footer {
   padding: 12px 16px;
-  background: ${C.infoBox};
-  border-top: 1px solid ${C.border};
+  background: ${LFH_COLORS.infoBox};
+  border-top: 1px solid ${LFH_COLORS.border};
   text-align: center;
 }
 
 .lfh-ss-v4-footer-text {
   font-family: 'Inter', sans-serif;
   font-size: 12px;
-  color: ${C.textSecondary};
+  color: ${LFH_COLORS.textSecondary};
   margin: 0;
 }
 
 .lfh-ss-v4-footer-text strong {
-  color: ${C.textPrimary};
+  color: ${LFH_COLORS.textPrimary};
   font-weight: 700;
 }
 
 /* ===== SCROLLBAR ===== */
 .lfh-ss-v4-content::-webkit-scrollbar { width: 4px; }
-.lfh-ss-v4-content::-webkit-scrollbar-track { background: ${C.infoBox}; border-radius: 2px; }
-.lfh-ss-v4-content::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 2px; }
+.lfh-ss-v4-content::-webkit-scrollbar-track { background: ${LFH_COLORS.infoBox}; border-radius: 2px; }
+.lfh-ss-v4-content::-webkit-scrollbar-thumb { background: ${LFH_COLORS.border}; border-radius: 2px; }
 .lfh-ss-v4-content::-webkit-scrollbar-thumb:hover { background: #CBD5E1; }
 </style>
 
@@ -670,7 +624,7 @@ function _sswRenderWidget(element, payload) {
       <p class="lfh-ss-v4-dig-deeper-subtitle">Discover more about who we are, what we do and how we do it in our six-part helicopter skiing mini-series.</p>
     </div>
     <div class="lfh-ss-v4-video-grid">
-      ${_sswVideos
+      ${videos
         .map(
           (video) => `
         <div class="lfh-ss-v4-video-card" data-video-id="${video.id}" style="background-image: url('${video.thumbnail}');">
@@ -689,7 +643,7 @@ function _sswRenderWidget(element, payload) {
   <!-- FAQ Panel -->
   <div class="lfh-ss-v4-panel ${initialTab === 'faq' ? 'active' : ''}" data-panel="faq">
     <div class="lfh-ss-v4-faq-list">
-      ${_sswFaqs
+      ${faqs
         .map(
           (faq) => `
         <div class="lfh-ss-v4-faq-item" data-faq="${faq.id}">
@@ -707,12 +661,12 @@ function _sswRenderWidget(element, payload) {
   <!-- Resources Panel -->
   <div class="lfh-ss-v4-panel ${initialTab === 'resources' ? 'active' : ''}" data-panel="resources">
     <div class="lfh-ss-v4-resources">
-      ${_sswResources
+      ${resources
         .map(
           (resource) => `
         <div class="lfh-ss-v4-resource-card" data-resource="${resource.id}">
           <div class="lfh-ss-v4-resource-icon">
-            ${_sswResourceIcons[resource.icon] || _sswResourceIcons.faq}
+            ${resourceIcons[resource.icon] || resourceIcons.faq}
           </div>
           <div class="lfh-ss-v4-resource-info">
             <p class="lfh-ss-v4-resource-title">${resource.title}</p>
@@ -733,76 +687,64 @@ function _sswRenderWidget(element, payload) {
 </div>
 `;
 
-  element.appendChild(container);
+    element.appendChild(container);
 
-  // ==================================================================
-  // ANIMATE IN
-  // ==================================================================
+    // ==================================================================
+    // ANIMATE IN
+    // ==================================================================
 
-  if (animateIn) {
-    setTimeout(() => {
-      container.style.opacity = '1';
-      container.style.transform = 'translateY(0)';
-    }, 50);
-  }
-
-  // ==================================================================
-  // EVENT HANDLERS
-  // ==================================================================
-
-  // Tab navigation (inline switching, same as v3)
-  container.querySelectorAll('.lfh-ss-v4-tab').forEach((tab) => {
-    tab.addEventListener('click', () => {
-      const tabName = tab.dataset.tab;
-
-      // Update tabs
-      container.querySelectorAll('.lfh-ss-v4-tab').forEach((t) => t.classList.remove('active'));
-      tab.classList.add('active');
-
-      // Update panels
-      container.querySelectorAll('.lfh-ss-v4-panel').forEach((p) => p.classList.remove('active'));
-      container.querySelector(`[data-panel="${tabName}"]`)?.classList.add('active');
-
-      currentTab = tabName;
-    });
-  });
-
-  // Video card clicks → open modal to Videos tab
-  container.addEventListener('click', (e) => {
-    const videoCard = e.target.closest('.lfh-ss-v4-video-card');
-    if (videoCard) {
-      window.__lfh.openSelfService?.('videos');
+    if (animateIn) {
+      setTimeout(() => {
+        container.style.opacity = '1';
+        container.style.transform = 'translateY(0)';
+      }, 50);
     }
-  });
 
-  // FAQ item clicks → open modal to FAQ tab
-  container.querySelectorAll('.lfh-ss-v4-faq-question').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      window.__lfh.openSelfService?.('faq');
+    // ==================================================================
+    // EVENT HANDLERS
+    // ==================================================================
+
+    // Tab navigation (inline switching, same as v3)
+    container.querySelectorAll('.lfh-ss-v4-tab').forEach((tab) => {
+      tab.addEventListener('click', () => {
+        const tabName = tab.dataset.tab;
+
+        // Update tabs
+        container.querySelectorAll('.lfh-ss-v4-tab').forEach((t) => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // Update panels
+        container.querySelectorAll('.lfh-ss-v4-panel').forEach((p) => p.classList.remove('active'));
+        container.querySelector(`[data-panel="${tabName}"]`)?.classList.add('active');
+
+        currentTab = tabName;
+      });
     });
-  });
 
-  // Resource card clicks → open modal to Resources tab
-  container.querySelectorAll('.lfh-ss-v4-resource-card').forEach((card) => {
-    card.addEventListener('click', () => {
-      window.__lfh.openSelfService?.('resources');
+    // Video card clicks → open modal to Videos tab
+    container.addEventListener('click', (e) => {
+      const videoCard = e.target.closest('.lfh-ss-v4-video-card');
+      if (videoCard) {
+        openBrowserSelfServiceModal('videos');
+      }
     });
-  });
-}
 
-// ============================================================================
-// VOICEFLOW EXTENSION WRAPPER
-// ============================================================================
+    // FAQ item clicks → open modal to FAQ tab
+    container.querySelectorAll('.lfh-ss-v4-faq-question').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        openBrowserSelfServiceModal('faq');
+      });
+    });
 
-export const LastFrontierBrowserSelfService = {
-  name: 'LastFrontierBrowserSelfService',
-  type: 'response',
-  match: ({ trace }) =>
-    trace.type === 'ext_browserSelfService' ||
-    trace.payload?.name === 'ext_browserSelfService',
-  render: ({ trace, element }) => {
-    // The widget renders inline content into the chat element
-    // It calls window.__lfh.openSelfService when user interacts with content
-    _sswRenderWidget(element, trace.payload || {});
+    // Resource card clicks → open modal to Resources tab
+    container.querySelectorAll('.lfh-ss-v4-resource-card').forEach((card) => {
+      card.addEventListener('click', () => {
+        openBrowserSelfServiceModal('resources');
+      });
+    });
+
+    return function cleanup() {};
   },
 };
+
+export default LastFrontierBrowserSelfService_v4_Unified;

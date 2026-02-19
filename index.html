@@ -332,9 +332,6 @@
     <p class="version" id="version-info">Loading assistant...</p>
 </div>
 
-<!-- Self-service modal (script tag, registers on window.__lfh) -->
-<script src="./extensions/browser-self-service-modal-unified.js"></script>
-
 <!-- Password check -->
 <script>
 var ACCESS_PASSWORD = 'Y6i6y54ac!';
@@ -430,23 +427,46 @@ function loadVoiceflow() {
             page_topic: ''
         };
 
-        // Load all unified extensions
+        // Load all extensions (12 files: 11 unified + feedback v10)
         var extensions = [];
         try {
-            var [feedbackMod, selfServiceMod, lodgeMod, tourMod, weatherMod] = await Promise.all([
-                import('./extensions/feedback-widget-unified.js'),
-                import('./extensions/browser-self-service-widget-unified.js'),
-                import('./extensions/lodge-compare-modal-unified.js'),
-                import('./extensions/tour-explorer-modal-unified.js'),
-                import('./extensions/weather-conditions-modal-unified.js'),
+            var [
+                feedbackMod,
+                selfServiceWidgetMod,
+                selfServiceModalMod,
+                lodgeWidgetMod,
+                lodgeModalMod,
+                tourGridMod,
+                tourModalMod,
+                weatherWidgetMod,
+                weatherModalMod,
+                welcomeCarouselMod,
+                welcomePathMod,
+                leadCaptureMod
+            ] = await Promise.all([
+                import('./extensions/lfh-feedback-v10.js'),
+                import('./extensions/browser-self-service-v4-widget-unified.js'),
+                import('./extensions/browser-self-service-v4-modal-unified.js'),
+                import('./extensions/lfh-lodge-compare-widget-v2-unified.js'),
+                import('./extensions/lfh-lodge-compare-modal-v2-unified.js'),
+                import('./extensions/lfh-tour-explorer-grid-booking-unified.js'),
+                import('./extensions/lfh-tour-explorer-modal-booking-unified.js'),
+                import('./extensions/lfh-weather-conditions-widget-v2-unified.js'),
+                import('./extensions/lfh-weather-conditions-modal-unified.js'),
+                import('./extensions/welcome-carousel-unified.js'),
+                import('./extensions/welcome-path-selector-unified.js'),
+                import('./extensions/lead-capture-form-v4-unified.js'),
             ]);
             extensions = [
-                feedbackMod.LastFrontierFeedbackWidgetUnified,
-                selfServiceMod.LastFrontierBrowserSelfService,
-                lodgeMod.LastFrontierLodgeCompare,
-                tourMod.LastFrontierTourExplorer,
-                weatherMod.LastFrontierWeatherConditionsModal,
-            ];
+                feedbackMod.FeedbackExtension10,
+                selfServiceWidgetMod.LastFrontierBrowserSelfService_v4_Unified,
+                lodgeWidgetMod.LFHLodgeCompareWidgetV2Unified,
+                tourGridMod.LFHTourExplorerGridBookingUnified,
+                weatherWidgetMod.LFHWeatherConditionsWidgetV2Unified,
+                welcomeCarouselMod.LastFrontierWelcomeCarouselUnified,
+                welcomePathMod.LastFrontierWelcomePathUnified,
+                leadCaptureMod.LastFrontierLeadForm_v4_Unified,
+            ].filter(Boolean);
             console.log('Extensions loaded:', extensions.map(function(e) { return e.name; }));
         } catch (err) {
             console.warn('Could not load extensions:', err);

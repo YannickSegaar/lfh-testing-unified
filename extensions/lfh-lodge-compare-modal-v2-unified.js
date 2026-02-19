@@ -1,50 +1,34 @@
 /**
- * Last Frontier Lodge Compare - Full-Screen Modal Extension
- * VoiceFlow-Ready — Unified Event Architecture
+ * Last Frontier Lodge Compare - Shared Modal Module
  *
- * Self-contained version for VoiceFlow widget (no ES module imports).
- * Cross-modal navigation uses window.__lfh namespace.
- *
- * Full-screen overlay modal with 4-tab navigation:
+ * Full-screen overlay modal with 3-tab navigation:
  * - Overview: Side-by-side comparison
  * - Bell 2 Lodge: Full detail view with video, gallery, terrain
  * - Ripley Creek: Full detail view with video, gallery, terrain
- * - Terrain: Side-by-side terrain comparison with run photos
  *
- * Uses the Unified Event Architecture for all agent interactions:
- *   - ext_user_action  (lodge_recommendation_request, terrain_recommendation_request,
- *                       view_lodge_tours, lodge_inquiry)
- *   - ext_modal_closed (lodge_compare)
+ * Imported by the in-chat lodge compare widget.
  *
- * @version 2.0.1-vf
+ * Unified Event Architecture: All interact calls use { type: 'event', payload: { event, data } }
+ *
+ * @version 2.0.1-unified
  * @author Last Frontier Heliskiing / RomAIx
  */
 
-// ============================================================================
-// SHARED CONSTANTS (inlined — no ES module import)
-// ============================================================================
+// Import shared constants from tour explorer
+import { LFH_COLORS, LFH_ASSETS } from '../lfh-tour-explorer-modal.js';
+// Import tour explorer for lodge→tour handoff
+import { openTourExplorerModalWithBookingUnified } from './lfh-tour-explorer-modal-booking-unified.js';
+// Import weather modal for cross-navigation
+import { openWeatherConditionsModal } from './lfh-weather-conditions-modal-unified.js';
 
-const LFH_COLORS_LC = {
-  primaryRed: '#e62b1e',
-  textPrimary: '#42494e',
-  textSecondary: '#666666',
-  background: '#FFFFFF',
-  infoBox: '#F5F5F5',
-  border: '#E5E8EB',
-  selectedTint: 'rgba(230, 43, 30, 0.04)',
-};
-
-const LFH_ASSETS_LC = {
-  bgImage: 'https://yannicksegaar.github.io/RomAIx-Logo/LFH_bg_content_and_image_black.png',
-  logo: 'https://yannicksegaar.github.io/RomAIx-Logo/LFH_Logo_FullName_White.svg',
-  videoMask: 'https://www.lastfrontierheli.com/wp-content/themes/lastfrontier/dist/images/videos-img-mask.png',
-};
+// Re-export for widget use
+export { LFH_COLORS, LFH_ASSETS };
 
 // ============================================================================
 // VIMEO VIDEO IDS
 // ============================================================================
 
-const LFH_LODGE_VIDEOS_LC = {
+export const LFH_LODGE_VIDEOS = {
   lodging: '237992712',
   location: '234398800',
   dayInLife: '247898299',
@@ -54,7 +38,7 @@ const LFH_LODGE_VIDEOS_LC = {
 // LODGE DATA
 // ============================================================================
 
-const LFH_LODGES_LC = {
+export const LFH_LODGES = {
   bell2: {
     id: 'bell2',
     name: 'Bell 2 Lodge',
@@ -185,7 +169,7 @@ const LFH_LODGES_LC = {
 // COMPARISON DATA
 // ============================================================================
 
-const COMPARISON_CATEGORIES_LC = [
+const COMPARISON_CATEGORIES = [
   {
     label: 'Capacity',
     bell2: '36 guests',
@@ -237,16 +221,10 @@ const COMPARISON_CATEGORIES_LC = [
 ];
 
 // ============================================================================
-// CROSS-MODAL NAMESPACE
-// ============================================================================
-
-window.__lfh = window.__lfh || {};
-
-// ============================================================================
 // HELPER: VoiceFlow Agent Communication (Unified Event Architecture)
 // ============================================================================
 
-function _lcSilentVariableUpdate(name, value) {
+function silentVariableUpdate(name, value) {
   try {
     if (window.voiceflow?.chat) {
       window.voiceflow.chat.proactive.push({ type: 'save', payload: { [name]: value } });
@@ -256,7 +234,7 @@ function _lcSilentVariableUpdate(name, value) {
   }
 }
 
-function _lcInteractWithAgent(eventName, data) {
+function interactWithAgent(eventName, data) {
   try {
     window.voiceflow?.chat?.interact({
       type: 'event',
@@ -272,8 +250,8 @@ function _lcInteractWithAgent(eventName, data) {
 // LIGHTBOX: Location Layout
 // ============================================================================
 
-function _lcShowLayoutLightbox(lodgeId) {
-  const lodge = LFH_LODGES_LC[lodgeId];
+function showLayoutLightbox(lodgeId) {
+  const lodge = LFH_LODGES[lodgeId];
   if (!lodge?.terrain?.locationLayoutImage) return;
 
   const lightbox = document.createElement('div');
@@ -320,15 +298,15 @@ function _lcShowLayoutLightbox(lodgeId) {
   };
   document.addEventListener('keydown', escHandler);
 
-  _lcSilentVariableUpdate('ext_viewed_layout', lodgeId);
+  silentVariableUpdate('ext_viewed_layout', lodgeId);
 }
 
 // ============================================================================
 // LIGHTBOX: Run Photo
 // ============================================================================
 
-function _lcShowRunPhotoLightbox(lodgeId, photoIndex) {
-  const lodge = LFH_LODGES_LC[lodgeId];
+function showRunPhotoLightbox(lodgeId, photoIndex) {
+  const lodge = LFH_LODGES[lodgeId];
   if (!lodge?.terrain?.runPhotos?.[photoIndex]) return;
 
   const photos = lodge.terrain.runPhotos;
@@ -408,17 +386,15 @@ function _lcShowRunPhotoLightbox(lodgeId, photoIndex) {
   updateLightboxContent();
   document.body.appendChild(lightbox);
 
-  _lcSilentVariableUpdate('ext_viewed_run_photo', `${lodgeId}_${photoIndex}`);
+  silentVariableUpdate('ext_viewed_run_photo', `${lodgeId}_${photoIndex}`);
 }
 
 // ============================================================================
 // MODAL: Open
 // ============================================================================
 
-function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
+export function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
   if (document.getElementById('lfh-lodge-compare-modal')) return;
-
-  const C = LFH_COLORS_LC;
 
   // Map old tab names to new ones
   if (initialTab === 'lodges' || initialTab === 'terrain') {
@@ -444,7 +420,7 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
   const modal = document.createElement('div');
   modal.style.cssText = `
     width: 90%; max-width: 960px; height: 85%; max-height: 780px;
-    background: ${C.background}; border-radius: 12px;
+    background: ${LFH_COLORS.background}; border-radius: 12px;
     overflow: hidden; display: flex; flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     animation: lfhlc-slideUp 0.4s ease;
@@ -452,7 +428,7 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
 
   // --- Inject Styles ---
   const styleEl = document.createElement('style');
-  styleEl.textContent = _lcBuildModalStyles(C);
+  styleEl.textContent = buildModalStyles();
   modal.appendChild(styleEl);
 
   // --- Header Bar ---
@@ -496,9 +472,9 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
   renderActiveTab();
 
   // Silent variable update
-  _lcSilentVariableUpdate('ext_last_action', 'lodge_compare_opened');
+  silentVariableUpdate('ext_last_action', 'lodge_compare_opened');
   if (focusLodge) {
-    _lcSilentVariableUpdate('ext_focus_lodge', focusLodge);
+    silentVariableUpdate('ext_focus_lodge', focusLodge);
   }
 
   // ========================================================================
@@ -512,9 +488,9 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
     if (activeTab === 'overview') {
       renderOverviewTab();
     } else if (activeTab === 'bell2') {
-      renderLodgeDetail(LFH_LODGES_LC.bell2);
+      renderLodgeDetail(LFH_LODGES.bell2);
     } else if (activeTab === 'ripley') {
-      renderLodgeDetail(LFH_LODGES_LC.ripley);
+      renderLodgeDetail(LFH_LODGES.ripley);
     } else if (activeTab === 'terrain') {
       renderTerrainTab();
     }
@@ -525,8 +501,8 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
   // ========================================================================
 
   function renderOverviewTab() {
-    const bell2 = LFH_LODGES_LC.bell2;
-    const ripley = LFH_LODGES_LC.ripley;
+    const bell2 = LFH_LODGES.bell2;
+    const ripley = LFH_LODGES.ripley;
 
     content.innerHTML = `
       <div class="lfhlc-overview">
@@ -582,7 +558,7 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
               <div class="lfhlc-comp-cell lfhlc-comp-lodge">Bell 2 Lodge</div>
               <div class="lfhlc-comp-cell lfhlc-comp-lodge">Ripley Creek</div>
             </div>
-            ${COMPARISON_CATEGORIES_LC.map(
+            ${COMPARISON_CATEGORIES.map(
               (cat) => `
               <div class="lfhlc-comparison-row">
                 <div class="lfhlc-comp-cell lfhlc-comp-label">
@@ -639,19 +615,19 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
         actionTaken = true;
         closeModal();
         setTimeout(() => {
-          window.__lfh.openTourExplorer?.(null, {
+          openTourExplorerModalWithBookingUnified(null, {
             initialLodgeFilter: lodgeId,
             onCompareLodges: (returnLodgeId) => {
               openLodgeCompareModal(returnLodgeId || lodgeId);
             },
-            onCheckConditions: () => window.__lfh.openWeatherConditions?.(),
+            onCheckConditions: () => openWeatherConditionsModal(),
           });
         }, 350);
       });
     });
 
     content.querySelector('.lfhlc-help-choose-btn')?.addEventListener('click', () => {
-      _lcInteractWithAgent('ext_user_action', { action: 'lodge_recommendation_request', source: 'lodge_compare' });
+      interactWithAgent('ext_user_action', { action: 'lodge_recommendation_request', source: 'lodge_compare' });
       actionTaken = true;
       closeModal();
     });
@@ -660,11 +636,11 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
       actionTaken = true;
       closeModal();
       setTimeout(() => {
-        window.__lfh.openTourExplorer?.(null, {
+        openTourExplorerModalWithBookingUnified(null, {
           onCompareLodges: (lodgeId) => {
             openLodgeCompareModal(lodgeId || null);
           },
-          onCheckConditions: () => window.__lfh.openWeatherConditions?.(),
+          onCheckConditions: () => openWeatherConditionsModal(),
         });
       }, 350);
     });
@@ -672,7 +648,7 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
     content.querySelector('.lfhlc-conditions-btn')?.addEventListener('click', () => {
       actionTaken = true;
       closeModal();
-      setTimeout(() => window.__lfh.openWeatherConditions?.(), 350);
+      setTimeout(() => openWeatherConditionsModal(), 350);
     });
   }
 
@@ -681,8 +657,8 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
   // ========================================================================
 
   function renderTerrainTab() {
-    const bell2 = LFH_LODGES_LC.bell2;
-    const ripley = LFH_LODGES_LC.ripley;
+    const bell2 = LFH_LODGES.bell2;
+    const ripley = LFH_LODGES.ripley;
 
     const terrainCategories = [
       { label: 'Skill Level', bell2: bell2.terrain.skillLevel, ripley: ripley.terrain.skillLevel, icon: '⛰' },
@@ -779,7 +755,7 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
 
     // Event listener for CTA
     content.querySelector('.lfhlc-terrain-recommend-btn')?.addEventListener('click', () => {
-      _lcInteractWithAgent('ext_user_action', { action: 'terrain_recommendation_request', source: 'lodge_compare' });
+      interactWithAgent('ext_user_action', { action: 'terrain_recommendation_request', source: 'lodge_compare' });
       actionTaken = true;
       closeModal();
     });
@@ -788,11 +764,11 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
       actionTaken = true;
       closeModal();
       setTimeout(() => {
-        window.__lfh.openTourExplorer?.(null, {
+        openTourExplorerModalWithBookingUnified(null, {
           onCompareLodges: (lodgeId) => {
             openLodgeCompareModal(lodgeId || null);
           },
-          onCheckConditions: () => window.__lfh.openWeatherConditions?.(),
+          onCheckConditions: () => openWeatherConditionsModal(),
         });
       }, 350);
     });
@@ -800,14 +776,14 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
     // Event listeners for layout buttons
     content.querySelectorAll('.lfhlc-layout-btn').forEach((btn) => {
       btn.addEventListener('click', () => {
-        _lcShowLayoutLightbox(btn.dataset.lodge);
+        showLayoutLightbox(btn.dataset.lodge);
       });
     });
 
     // Event listeners for run photos
     content.querySelectorAll('.lfhlc-run-photo').forEach((photo) => {
       photo.addEventListener('click', () => {
-        _lcShowRunPhotoLightbox(photo.dataset.lodge, parseInt(photo.dataset.index));
+        showRunPhotoLightbox(photo.dataset.lodge, parseInt(photo.dataset.index));
       });
     });
   }
@@ -1000,13 +976,13 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
       }
     });
 
-    // Book CTA -> notify AI, then hand off to Tour Explorer pre-filtered to this lodge
+    // Book CTA → notify AI, then hand off to Tour Explorer pre-filtered to this lodge
     content.querySelector('.lfhlc-action-book')?.addEventListener('click', () => {
-      _lcSilentVariableUpdate('ext_lodge_selected', lodge.id);
+      silentVariableUpdate('ext_lodge_selected', lodge.id);
       actionTaken = true;
 
       // Fire event so AI responds with contextual message in chat
-      _lcInteractWithAgent('ext_user_action', {
+      interactWithAgent('ext_user_action', {
         action: 'view_lodge_tours',
         source: 'lodge_compare',
         lodge: lodge.id,
@@ -1017,19 +993,19 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
 
       // Open Tour Explorer after AI has time to respond (~1.5s)
       setTimeout(() => {
-        window.__lfh.openTourExplorer?.(null, {
+        openTourExplorerModalWithBookingUnified(null, {
           initialLodgeFilter: lodge.id,
           onCompareLodges: (lodgeId) => {
             openLodgeCompareModal(lodgeId || lodge.id);
           },
-          onCheckConditions: () => window.__lfh.openWeatherConditions?.(),
+          onCheckConditions: () => openWeatherConditionsModal(),
         });
       }, 1500);
     });
 
     // Ask CTA
     content.querySelector('.lfhlc-action-ask')?.addEventListener('click', () => {
-      _lcInteractWithAgent('ext_user_action', {
+      interactWithAgent('ext_user_action', {
         action: 'lodge_inquiry',
         source: 'lodge_compare',
         lodge: lodge.id,
@@ -1066,7 +1042,7 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
       </div>
     `;
 
-    _lcSilentVariableUpdate('ext_video_played', `lodge_${lodge.id}`);
+    silentVariableUpdate('ext_video_played', `lodge_${lodge.id}`);
   }
 
   // ========================================================================
@@ -1077,7 +1053,7 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
     tabBar.querySelectorAll('.lfhlc-tab').forEach((tab) => {
       tab.classList.toggle('active', tab.dataset.tab === activeTab);
     });
-    _lcSilentVariableUpdate('ext_lodge_compare_tab', activeTab);
+    silentVariableUpdate('ext_lodge_compare_tab', activeTab);
   }
 
   // ========================================================================
@@ -1098,7 +1074,7 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
 
   function closeModal() {
     if (!actionTaken) {
-      _lcInteractWithAgent('ext_modal_closed', {
+      interactWithAgent('ext_modal_closed', {
         modal: 'lodge_compare',
         lastTab: activeTab,
       });
@@ -1123,30 +1099,11 @@ function openLodgeCompareModal(focusLodge = null, initialTab = 'overview') {
   }, { signal: abortController.signal });
 }
 
-// Register on namespace
-window.__lfh.openLodgeCompare = openLodgeCompareModal;
-
-// ============================================================================
-// VOICEFLOW EXTENSION WRAPPER
-// ============================================================================
-
-export const LastFrontierLodgeCompare = {
-  name: 'LastFrontierLodgeCompare',
-  type: 'response',
-  match: ({ trace }) =>
-    trace.type === 'ext_lodgeCompare' ||
-    trace.payload?.name === 'ext_lodgeCompare',
-  render: ({ trace, element }) => {
-    const payload = trace.payload || {};
-    openLodgeCompareModal(payload.focusLodge || null, payload.tab || 'overview');
-  },
-};
-
 // ============================================================================
 // STYLES
 // ============================================================================
 
-function _lcBuildModalStyles(C) {
+function buildModalStyles() {
   return `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
 
@@ -1169,7 +1126,7 @@ function _lcBuildModalStyles(C) {
 /* Header Bar */
 .lfhlc-header-bar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px; background: ${C.textPrimary};
+  padding: 14px 20px; background: ${LFH_COLORS.textPrimary};
   flex-shrink: 0;
 }
 .lfhlc-header-title {
@@ -1189,24 +1146,24 @@ function _lcBuildModalStyles(C) {
 /* Tab Bar */
 .lfhlc-tab-bar {
   display: flex; gap: 8px; padding: 12px 20px;
-  background: #fff; border-bottom: 1px solid ${C.border};
+  background: #fff; border-bottom: 1px solid ${LFH_COLORS.border};
   flex-shrink: 0;
   overflow-x: auto; -webkit-overflow-scrolling: touch;
   scrollbar-width: none; /* Firefox */
 }
 .lfhlc-tab-bar::-webkit-scrollbar { display: none; }
 .lfhlc-tab {
-  padding: 10px 20px; background: ${C.infoBox};
-  border: 1.5px solid ${C.border}; border-radius: 24px;
+  padding: 10px 20px; background: ${LFH_COLORS.infoBox};
+  border: 1.5px solid ${LFH_COLORS.border}; border-radius: 24px;
   font-family: 'Inter', sans-serif; font-size: 13px;
-  font-weight: 600; color: ${C.textSecondary};
+  font-weight: 600; color: ${LFH_COLORS.textSecondary};
   cursor: pointer; transition: all 0.2s;
 }
 .lfhlc-tab:hover {
-  border-color: ${C.primaryRed}; color: ${C.textPrimary};
+  border-color: ${LFH_COLORS.primaryRed}; color: ${LFH_COLORS.textPrimary};
 }
 .lfhlc-tab.active {
-  background: ${C.primaryRed}; border-color: ${C.primaryRed};
+  background: ${LFH_COLORS.primaryRed}; border-color: ${LFH_COLORS.primaryRed};
   color: #fff;
 }
 
@@ -1216,8 +1173,8 @@ function _lcBuildModalStyles(C) {
   font-family: 'Inter', sans-serif;
 }
 .lfhlc-content::-webkit-scrollbar { width: 6px; }
-.lfhlc-content::-webkit-scrollbar-track { background: ${C.infoBox}; }
-.lfhlc-content::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 3px; }
+.lfhlc-content::-webkit-scrollbar-track { background: ${LFH_COLORS.infoBox}; }
+.lfhlc-content::-webkit-scrollbar-thumb { background: ${LFH_COLORS.border}; border-radius: 3px; }
 
 /* ========== OVERVIEW TAB ========== */
 
@@ -1230,12 +1187,12 @@ function _lcBuildModalStyles(C) {
 }
 
 .lfhlc-overview-card {
-  border: 1.5px solid ${C.border}; border-radius: 12px;
+  border: 1.5px solid ${LFH_COLORS.border}; border-radius: 12px;
   overflow: hidden; cursor: pointer; transition: all 0.2s;
   background: #fff;
 }
 .lfhlc-overview-card:hover {
-  border-color: ${C.primaryRed};
+  border-color: ${LFH_COLORS.primaryRed};
   box-shadow: 0 6px 20px rgba(230, 43, 30, 0.1);
   transform: translateY(-2px);
 }
@@ -1268,54 +1225,54 @@ function _lcBuildModalStyles(C) {
   display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;
 }
 .lfhlc-quick-stat {
-  padding: 4px 10px; background: ${C.infoBox};
-  border: 1px solid ${C.border}; border-radius: 14px;
-  font-size: 11px; font-weight: 500; color: ${C.textPrimary};
+  padding: 4px 10px; background: ${LFH_COLORS.infoBox};
+  border: 1px solid ${LFH_COLORS.border}; border-radius: 14px;
+  font-size: 11px; font-weight: 500; color: ${LFH_COLORS.textPrimary};
 }
 
 /* Comparison Section */
 .lfhlc-comparison-section { margin-bottom: 24px; }
 
 .lfhlc-section-title {
-  font-size: 14px; font-weight: 700; color: ${C.textPrimary};
+  font-size: 14px; font-weight: 700; color: ${LFH_COLORS.textPrimary};
   text-transform: uppercase; letter-spacing: 0.5px;
   margin: 0 0 14px;
 }
 
 .lfhlc-comparison-table {
-  border: 1px solid ${C.border}; border-radius: 10px;
+  border: 1px solid ${LFH_COLORS.border}; border-radius: 10px;
   overflow: hidden;
 }
 
 .lfhlc-comparison-header {
   display: grid; grid-template-columns: 160px 1fr 1fr;
   background: #fff;
-  border-bottom: 2px solid ${C.primaryRed};
+  border-bottom: 2px solid ${LFH_COLORS.primaryRed};
 }
 .lfhlc-comparison-header .lfhlc-comp-cell {
   font-weight: 700; font-size: 12px; text-transform: uppercase;
   letter-spacing: 0.3px;
-  color: ${C.primaryRed};
+  color: ${LFH_COLORS.primaryRed};
 }
 
 .lfhlc-comparison-row {
   display: grid; grid-template-columns: 160px 1fr 1fr;
-  border-bottom: 1px solid ${C.border};
+  border-bottom: 1px solid ${LFH_COLORS.border};
 }
 .lfhlc-comparison-row:last-child { border-bottom: none; }
-.lfhlc-comparison-row:hover { background: ${C.selectedTint}; }
+.lfhlc-comparison-row:hover { background: ${LFH_COLORS.selectedTint}; }
 
 .lfhlc-comp-cell {
   padding: 12px 14px; font-size: 12px;
-  color: ${C.textPrimary};
+  color: ${LFH_COLORS.textPrimary};
 }
 .lfhlc-comp-label {
-  background: ${C.infoBox}; font-weight: 600;
+  background: ${LFH_COLORS.infoBox}; font-weight: 600;
   display: flex; align-items: center; gap: 8px;
 }
 .lfhlc-comp-icon {
   font-size: 14px;
-  color: ${C.textSecondary};
+  color: ${LFH_COLORS.textSecondary};
   font-family: sans-serif;
 }
 .lfhlc-comp-lodge { text-align: center; }
@@ -1324,7 +1281,7 @@ function _lcBuildModalStyles(C) {
 .lfhlc-overview-cta { text-align: center; padding: 10px 0 20px; }
 .lfhlc-help-choose-btn { }
 .lfhlc-cta-subtext {
-  font-size: 12px; color: ${C.textSecondary};
+  font-size: 12px; color: ${LFH_COLORS.textSecondary};
   margin: 10px 0 0;
 }
 
@@ -1339,7 +1296,7 @@ function _lcBuildModalStyles(C) {
 
 .lfhlc-terrain-card {
   border-radius: 10px; overflow: hidden;
-  border: 1.5px solid ${C.border};
+  border: 1.5px solid ${LFH_COLORS.border};
   background: #fff;
 }
 
@@ -1354,11 +1311,11 @@ function _lcBuildModalStyles(C) {
 }
 .lfhlc-terrain-card-label strong {
   font-family: 'Nexa Rust Sans Black 2', sans-serif;
-  font-size: 14px; font-weight: 900; color: ${C.textPrimary};
+  font-size: 14px; font-weight: 900; color: ${LFH_COLORS.textPrimary};
   text-transform: uppercase; letter-spacing: 0.5px;
 }
 .lfhlc-terrain-card-label span {
-  font-size: 12px; color: ${C.textSecondary};
+  font-size: 12px; color: ${LFH_COLORS.textSecondary};
   font-style: italic;
 }
 
@@ -1381,14 +1338,14 @@ function _lcBuildModalStyles(C) {
 }
 .lfhlc-layout-btn {
   padding: 8px 16px; background: transparent;
-  border: 1.5px solid ${C.border}; border-radius: 20px;
+  border: 1.5px solid ${LFH_COLORS.border}; border-radius: 20px;
   font-family: 'Inter', sans-serif;
-  font-size: 12px; font-weight: 600; color: ${C.textSecondary};
+  font-size: 12px; font-weight: 600; color: ${LFH_COLORS.textSecondary};
   cursor: pointer; transition: all 0.2s;
 }
 .lfhlc-layout-btn:hover {
-  border-color: ${C.primaryRed};
-  color: ${C.primaryRed};
+  border-color: ${LFH_COLORS.primaryRed};
+  color: ${LFH_COLORS.primaryRed};
 }
 
 /* Run Photos Gallery */
@@ -1402,21 +1359,21 @@ function _lcBuildModalStyles(C) {
   margin-bottom: 0;
 }
 .lfhlc-run-photos-label {
-  font-size: 12px; font-weight: 700; color: ${C.textSecondary};
+  font-size: 12px; font-weight: 700; color: ${LFH_COLORS.textSecondary};
   text-transform: uppercase; letter-spacing: 0.5px; margin: 0 0 8px;
 }
 .lfhlc-run-photos-strip {
   display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px;
 }
 .lfhlc-run-photos-strip::-webkit-scrollbar { height: 4px; }
-.lfhlc-run-photos-strip::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 2px; }
+.lfhlc-run-photos-strip::-webkit-scrollbar-thumb { background: ${LFH_COLORS.border}; border-radius: 2px; }
 .lfhlc-run-photo {
   flex: 0 0 200px; height: 112px;
   border-radius: 8px; background-size: cover; background-position: center;
   cursor: pointer; border: 2px solid transparent; transition: all 0.2s;
 }
 .lfhlc-run-photo:hover {
-  border-color: ${C.primaryRed};
+  border-color: ${LFH_COLORS.primaryRed};
   transform: scale(1.02);
 }
 
@@ -1500,12 +1457,12 @@ function _lcBuildModalStyles(C) {
   justify-content: center; transition: all 0.2s;
 }
 .lfhlc-play-btn:hover {
-  background: ${C.primaryRed}; transform: scale(1.1);
+  background: ${LFH_COLORS.primaryRed}; transform: scale(1.1);
 }
 .lfhlc-play-btn:hover .lfhlc-play-triangle { border-left-color: #fff; }
 .lfhlc-play-triangle {
   width: 0; height: 0;
-  border-left: 18px solid ${C.textPrimary};
+  border-left: 18px solid ${LFH_COLORS.textPrimary};
   border-top: 11px solid transparent;
   border-bottom: 11px solid transparent;
   margin-left: 4px; transition: border-color 0.2s;
@@ -1527,19 +1484,19 @@ function _lcBuildModalStyles(C) {
   padding-bottom: 8px; margin-bottom: 20px;
 }
 .lfhlc-gallery-strip::-webkit-scrollbar { height: 4px; }
-.lfhlc-gallery-strip::-webkit-scrollbar-thumb { background: ${C.border}; border-radius: 2px; }
+.lfhlc-gallery-strip::-webkit-scrollbar-thumb { background: ${LFH_COLORS.border}; border-radius: 2px; }
 .lfhlc-gallery-thumb {
   flex: 0 0 120px; height: 80px; border-radius: 8px;
   background-size: cover; background-position: center;
   border: 2px solid transparent; cursor: pointer; transition: all 0.2s;
 }
-.lfhlc-gallery-thumb:hover { border-color: ${C.primaryRed}; }
-.lfhlc-gallery-thumb.active { border-color: ${C.primaryRed}; }
+.lfhlc-gallery-thumb:hover { border-color: ${LFH_COLORS.primaryRed}; }
+.lfhlc-gallery-thumb.active { border-color: ${LFH_COLORS.primaryRed}; }
 
 /* Detail Sections */
 .lfhlc-detail-section { margin-bottom: 20px; }
 .lfhlc-full-desc {
-  font-size: 13px; line-height: 1.7; color: ${C.textPrimary};
+  font-size: 13px; line-height: 1.7; color: ${LFH_COLORS.textPrimary};
   margin: 0;
 }
 
@@ -1550,14 +1507,14 @@ function _lcBuildModalStyles(C) {
 }
 .lfhlc-stat-box {
   text-align: center; padding: 14px 8px;
-  background: ${C.infoBox}; border-radius: 8px;
+  background: ${LFH_COLORS.infoBox}; border-radius: 8px;
 }
 .lfhlc-stat-value {
-  font-size: 15px; font-weight: 700; color: ${C.primaryRed};
+  font-size: 15px; font-weight: 700; color: ${LFH_COLORS.primaryRed};
   margin-bottom: 3px;
 }
 .lfhlc-stat-label {
-  font-size: 10px; color: ${C.textSecondary};
+  font-size: 10px; color: ${LFH_COLORS.textSecondary};
   text-transform: uppercase; letter-spacing: 0.3px;
 }
 
@@ -1568,24 +1525,24 @@ function _lcBuildModalStyles(C) {
 }
 .lfhlc-feature-section { }
 .lfhlc-feature-title {
-  font-size: 11px; font-weight: 700; color: ${C.textSecondary};
+  font-size: 11px; font-weight: 700; color: ${LFH_COLORS.textSecondary};
   text-transform: uppercase; letter-spacing: 0.5px;
   margin: 0 0 8px;
 }
 .lfhlc-feature-text {
-  font-size: 13px; line-height: 1.5; color: ${C.textPrimary};
+  font-size: 13px; line-height: 1.5; color: ${LFH_COLORS.textPrimary};
   margin: 0;
 }
 .lfhlc-feature-tags { display: flex; flex-wrap: wrap; gap: 6px; }
 .lfhlc-feature-tag {
-  padding: 5px 12px; background: ${C.infoBox};
-  border: 1px solid ${C.border}; border-radius: 16px;
-  font-size: 11px; font-weight: 500; color: ${C.textPrimary};
+  padding: 5px 12px; background: ${LFH_COLORS.infoBox};
+  border: 1px solid ${LFH_COLORS.border}; border-radius: 16px;
+  font-size: 11px; font-weight: 500; color: ${LFH_COLORS.textPrimary};
 }
 
 /* Terrain Section */
 .lfhlc-terrain-section {
-  background: ${C.infoBox}; border-radius: 10px;
+  background: ${LFH_COLORS.infoBox}; border-radius: 10px;
   margin-bottom: 24px; overflow: hidden;
 }
 .lfhlc-terrain-toggle {
@@ -1593,7 +1550,7 @@ function _lcBuildModalStyles(C) {
   background: transparent; border: none;
   display: flex; align-items: center; gap: 10px;
   font-family: 'Inter', sans-serif; font-size: 14px;
-  font-weight: 700; color: ${C.textPrimary};
+  font-weight: 700; color: ${LFH_COLORS.textPrimary};
   cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px;
 }
 .lfhlc-terrain-toggle:hover { background: rgba(0,0,0,0.03); }
@@ -1618,15 +1575,15 @@ function _lcBuildModalStyles(C) {
 .lfhlc-terrain-details { }
 .lfhlc-terrain-row {
   display: flex; align-items: flex-start; gap: 12px;
-  padding: 10px 0; border-bottom: 1px solid ${C.border};
+  padding: 10px 0; border-bottom: 1px solid ${LFH_COLORS.border};
 }
 .lfhlc-terrain-row:last-child { border-bottom: none; }
 .lfhlc-terrain-label {
   flex: 0 0 120px; font-size: 11px; font-weight: 700;
-  color: ${C.textSecondary}; text-transform: uppercase;
+  color: ${LFH_COLORS.textSecondary}; text-transform: uppercase;
 }
 .lfhlc-terrain-value {
-  flex: 1; font-size: 13px; color: ${C.textPrimary};
+  flex: 1; font-size: 13px; color: ${LFH_COLORS.textPrimary};
 }
 .lfhlc-terrain-value.lfhlc-highlight {
   color: #2E7D32; font-weight: 600;
@@ -1635,13 +1592,13 @@ function _lcBuildModalStyles(C) {
 /* Detail Actions */
 .lfhlc-detail-actions {
   display: flex; gap: 12px; padding: 16px 0;
-  border-top: 1px solid ${C.border};
+  border-top: 1px solid ${LFH_COLORS.border};
 }
 
 /* Buttons */
 .lfhlc-btn-primary {
   flex: 1; padding: 12px 20px;
-  background: ${C.primaryRed}; color: #fff;
+  background: ${LFH_COLORS.primaryRed}; color: #fff;
   border: none; border-radius: 8px; font-family: 'Inter', sans-serif;
   font-size: 13px; font-weight: 600; cursor: pointer;
   transition: all 0.2s; text-align: center;
@@ -1649,22 +1606,22 @@ function _lcBuildModalStyles(C) {
 .lfhlc-btn-primary:hover { background: #c4221a; transform: translateY(-1px); }
 .lfhlc-btn-outline {
   flex: 1; padding: 12px 20px;
-  background: #fff; color: ${C.textPrimary};
-  border: 1.5px solid ${C.border}; border-radius: 8px;
+  background: #fff; color: ${LFH_COLORS.textPrimary};
+  border: 1.5px solid ${LFH_COLORS.border}; border-radius: 8px;
   font-family: 'Inter', sans-serif; font-size: 13px;
   font-weight: 600; cursor: pointer; transition: all 0.2s;
   text-align: center;
 }
 .lfhlc-btn-outline:hover {
-  border-color: ${C.primaryRed};
-  color: ${C.primaryRed};
+  border-color: ${LFH_COLORS.primaryRed};
+  color: ${LFH_COLORS.primaryRed};
 }
 .lfhlc-btn-text {
   background: transparent; border: none;
-  color: ${C.textSecondary}; font-family: 'Inter', sans-serif;
+  color: ${LFH_COLORS.textSecondary}; font-family: 'Inter', sans-serif;
   font-size: 12px; cursor: pointer; padding: 8px; transition: color 0.2s;
 }
-.lfhlc-btn-text:hover { color: ${C.primaryRed}; }
+.lfhlc-btn-text:hover { color: ${LFH_COLORS.primaryRed}; }
 .lfhlc-card-actions { display: flex; gap: 8px; }
 .lfhlc-card-actions .lfhlc-btn-primary,
 .lfhlc-card-actions .lfhlc-btn-outline { font-size: 12px; padding: 10px 14px; }

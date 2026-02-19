@@ -1,54 +1,44 @@
 /**
  * Last Frontier Weather Conditions - iFrame Modal Extension
- * VoiceFlow-Ready — Unified Event Architecture
+ * Unified Event Architecture
  *
- * Self-contained version for VoiceFlow widget (no ES module imports).
- * Cross-modal navigation uses window.__lfh namespace.
+ * Opens the live heliskiing weather conditions page in a branded
+ * modal overlay with iframe, loading state, and graceful fallback.
  *
  * Uses the Unified Event Architecture for all agent interactions:
  *   - ext_user_action  (weather_view_external, weather_browse_tours, weather_compare_lodges)
  *   - ext_modal_closed (weather)
  *
- * @version 2.0.0-vf
+ * @version 2.0.0-unified
  * @author Last Frontier Heliskiing / RomAIx
  */
 
-// ============================================================================
-// SHARED CONSTANTS (inlined — no ES module import)
-// ============================================================================
+import { LFH_COLORS, LFH_ASSETS } from '../lfh-tour-explorer-modal.js';
+import { openLodgeCompareModal } from './lfh-lodge-compare-modal-v2-unified.js';
+import { openTourExplorerModalWithBookingUnified } from './lfh-tour-explorer-modal-booking-unified.js';
 
-const LFH_COLORS_WC = {
-  primaryRed: '#e62b1e',
-  textPrimary: '#42494e',
-  textSecondary: '#666666',
-  background: '#FFFFFF',
-  infoBox: '#F5F5F5',
-  border: '#E5E8EB',
-  selectedTint: 'rgba(230, 43, 30, 0.04)',
-};
+// ============================================================================
+// CONSTANTS
+// ============================================================================
 
 const WEATHER_URL = 'https://www.lastfrontierheli.com/heliskiing-conditions/';
 const IFRAME_TIMEOUT = 8000;
 
 // ============================================================================
-// CROSS-MODAL NAMESPACE
-// ============================================================================
-
-window.__lfh = window.__lfh || {};
-
-// ============================================================================
 // HELPER: VoiceFlow Agent Communication
 // ============================================================================
 
-function _wcSilentVariableUpdate(name, value) {
+function silentVariableUpdate(name, value) {
   try {
     if (window.voiceflow?.chat) {
       window.voiceflow.chat.proactive.push({ type: 'save', payload: { [name]: value } });
     }
-  } catch (e) { /* silent */ }
+  } catch (e) {
+    // Silent fail - VF may not be available in test
+  }
 }
 
-function _wcInteractWithAgent(eventName, data) {
+function interactWithAgent(eventName, data) {
   try {
     window.voiceflow?.chat?.interact({
       type: 'event',
@@ -64,10 +54,9 @@ function _wcInteractWithAgent(eventName, data) {
 // MODAL: Open
 // ============================================================================
 
-function openWeatherConditionsModal() {
+export function openWeatherConditionsModal() {
   if (document.getElementById('lfh-weather-conditions-modal')) return;
 
-  const C = LFH_COLORS_WC;
   const openedAt = Date.now();
   let actionTaken = false;
   const abortController = new AbortController();
@@ -86,7 +75,7 @@ function openWeatherConditionsModal() {
   modal.className = 'lfhwc-modal';
   modal.style.cssText = `
     width: 94%; max-width: 1100px; height: 90%; max-height: 850px;
-    background: ${C.background}; border-radius: 12px;
+    background: ${LFH_COLORS.background}; border-radius: 12px;
     overflow: hidden; display: flex; flex-direction: column;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     animation: lfhwc-slideUp 0.4s ease;
@@ -94,7 +83,7 @@ function openWeatherConditionsModal() {
 
   // --- Inject Styles ---
   const styleEl = document.createElement('style');
-  styleEl.textContent = _wcBuildModalStyles(C);
+  styleEl.textContent = buildModalStyles();
   modal.appendChild(styleEl);
 
   // --- Header Bar ---
@@ -113,6 +102,7 @@ function openWeatherConditionsModal() {
   content.className = 'lfhwc-content';
   content.style.cssText = 'flex: 1; position: relative; overflow: hidden;';
 
+  // Loading overlay
   const loading = document.createElement('div');
   loading.className = 'lfhwc-loading';
   loading.innerHTML = `
@@ -121,6 +111,7 @@ function openWeatherConditionsModal() {
   `;
   content.appendChild(loading);
 
+  // iframe
   const iframe = document.createElement('iframe');
   iframe.src = WEATHER_URL;
   iframe.sandbox = 'allow-same-origin allow-scripts allow-popups allow-forms';
@@ -147,18 +138,22 @@ function openWeatherConditionsModal() {
   backdrop.appendChild(modal);
   document.body.appendChild(backdrop);
 
-  _wcSilentVariableUpdate('ext_last_action', 'weather_conditions_opened');
+  // Silent variable update
+  silentVariableUpdate('ext_last_action', 'weather_conditions_opened');
 
   // --- iframe load / fallback logic ---
   let loaded = false;
 
   const timeoutId = setTimeout(() => {
-    if (!loaded) showFallback();
+    if (!loaded) {
+      showFallback();
+    }
   }, IFRAME_TIMEOUT);
 
   iframe.addEventListener('load', () => {
     loaded = true;
     clearTimeout(timeoutId);
+    // Fade out loading, fade in iframe
     loading.style.opacity = '0';
     loading.style.pointerEvents = 'none';
     iframe.style.opacity = '1';
@@ -187,7 +182,7 @@ function openWeatherConditionsModal() {
     loading.querySelector('#lfhwc-open-external')?.addEventListener('click', () => {
       window.open(WEATHER_URL, '_blank');
       actionTaken = true;
-      _wcInteractWithAgent('ext_user_action', {
+      interactWithAgent('ext_user_action', {
         action: 'weather_view_external',
         source: 'weather_modal',
       });
@@ -197,31 +192,27 @@ function openWeatherConditionsModal() {
   // --- Cross-Navigation Handlers ---
   footerBar.querySelector('[data-nav="tours"]')?.addEventListener('click', () => {
     actionTaken = true;
-    _wcInteractWithAgent('ext_user_action', {
+    interactWithAgent('ext_user_action', {
       action: 'weather_browse_tours',
       source: 'weather_modal',
     });
     closeModal();
     setTimeout(() => {
-      if (window.__lfh.openTourExplorer) {
-        window.__lfh.openTourExplorer(null, {
-          onCompareLodges: (lodgeId) => window.__lfh.openLodgeCompare?.(lodgeId || null),
-          onCheckConditions: () => window.__lfh.openWeatherConditions?.(),
-        });
-      }
+      openTourExplorerModalWithBookingUnified(null, {
+        onCompareLodges: (lodgeId) => openLodgeCompareModal(lodgeId || null),
+        onCheckConditions: () => openWeatherConditionsModal(),
+      });
     }, 350);
   });
 
   footerBar.querySelector('[data-nav="lodges"]')?.addEventListener('click', () => {
     actionTaken = true;
-    _wcInteractWithAgent('ext_user_action', {
+    interactWithAgent('ext_user_action', {
       action: 'weather_compare_lodges',
       source: 'weather_modal',
     });
     closeModal();
-    setTimeout(() => {
-      window.__lfh.openLodgeCompare?.();
-    }, 350);
+    setTimeout(() => openLodgeCompareModal(), 350);
   });
 
   // ========================================================================
@@ -229,55 +220,36 @@ function openWeatherConditionsModal() {
   // ========================================================================
 
   function closeModal() {
-    var viewDurationMs = Date.now() - openedAt;
+    const viewDurationMs = Date.now() - openedAt;
     if (!actionTaken) {
-      _wcInteractWithAgent('ext_modal_closed', { modal: 'weather', viewDurationMs: viewDurationMs });
+      interactWithAgent('ext_modal_closed', { modal: 'weather', viewDurationMs });
     }
 
     abortController.abort();
     backdrop.style.animation = 'lfhwc-fadeOut 0.3s ease forwards';
-    setTimeout(function () {
+    setTimeout(() => {
       backdrop.remove();
     }, 300);
   }
 
+  // Close handlers
   headerBar.querySelector('.lfhwc-close-btn')?.addEventListener('click', closeModal);
-  backdrop.addEventListener('click', function (e) {
+  backdrop.addEventListener('click', (e) => {
     if (e.target === backdrop) closeModal();
   });
 
-  document.addEventListener('keydown', function (e) {
+  document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && document.contains(backdrop)) {
       closeModal();
     }
   }, { signal: abortController.signal });
 }
 
-// Register on namespace
-window.__lfh.openWeatherConditions = openWeatherConditionsModal;
-
-// ============================================================================
-// VOICEFLOW EXTENSION WRAPPER
-// ============================================================================
-
-export const LastFrontierWeatherConditionsModal = {
-  name: 'LastFrontierWeatherConditionsModal',
-  type: 'response',
-
-  match: ({ trace }) =>
-    trace.type === 'ext_weatherConditions' ||
-    trace.payload?.name === 'ext_weatherConditions',
-
-  render: ({ trace, element }) => {
-    openWeatherConditionsModal();
-  },
-};
-
 // ============================================================================
 // STYLES
 // ============================================================================
 
-function _wcBuildModalStyles(C) {
+function buildModalStyles() {
   return `
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
 
@@ -289,6 +261,7 @@ function _wcBuildModalStyles(C) {
   font-display: swap;
 }
 
+/* Animations */
 @keyframes lfhwc-fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes lfhwc-fadeOut { from { opacity: 1; } to { opacity: 0; } }
 @keyframes lfhwc-slideUp {
@@ -300,9 +273,10 @@ function _wcBuildModalStyles(C) {
   to { transform: rotate(360deg); }
 }
 
+/* Header Bar */
 .lfhwc-header-bar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 14px 20px; background: ${C.textPrimary};
+  padding: 14px 20px; background: ${LFH_COLORS.textPrimary};
   flex-shrink: 0;
 }
 .lfhwc-header-left { display: flex; align-items: center; gap: 12px; }
@@ -320,27 +294,29 @@ function _wcBuildModalStyles(C) {
 }
 .lfhwc-close-btn:hover { background: rgba(255,255,255,0.15); }
 
+/* Loading State */
 .lfhwc-loading {
   position: absolute; inset: 0;
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
-  background: ${C.background};
+  background: ${LFH_COLORS.background};
   transition: opacity 0.4s ease;
   z-index: 1;
 }
 .lfhwc-spinner {
   width: 40px; height: 40px;
-  border: 4px solid ${C.border};
-  border-top-color: ${C.primaryRed};
+  border: 4px solid ${LFH_COLORS.border};
+  border-top-color: ${LFH_COLORS.primaryRed};
   border-radius: 50%;
   animation: lfhwc-spin 0.8s linear infinite;
 }
 .lfhwc-loading-text {
   margin-top: 16px;
   font-family: 'Inter', sans-serif;
-  font-size: 14px; color: ${C.textSecondary};
+  font-size: 14px; color: ${LFH_COLORS.textSecondary};
 }
 
+/* Fallback State */
 .lfhwc-fallback {
   display: flex; flex-direction: column;
   align-items: center; text-align: center;
@@ -348,16 +324,16 @@ function _wcBuildModalStyles(C) {
 }
 .lfhwc-fallback-icon {
   font-size: 48px; margin-bottom: 16px;
-  color: ${C.textSecondary};
+  color: ${LFH_COLORS.textSecondary};
 }
 .lfhwc-fallback-message {
   font-family: 'Inter', sans-serif;
-  font-size: 15px; color: ${C.textPrimary};
+  font-size: 15px; color: ${LFH_COLORS.textPrimary};
   margin: 0 0 20px; max-width: 360px; line-height: 1.5;
 }
 .lfhwc-fallback-btn {
   padding: 14px 32px;
-  background: ${C.primaryRed}; color: #fff;
+  background: ${LFH_COLORS.primaryRed}; color: #fff;
   border: none; border-radius: 8px;
   font-family: 'Inter', sans-serif;
   font-size: 14px; font-weight: 600;
@@ -369,19 +345,20 @@ function _wcBuildModalStyles(C) {
 .lfhwc-fallback-subtext {
   margin: 10px 0 0;
   font-family: 'Inter', sans-serif;
-  font-size: 12px; color: ${C.textSecondary};
+  font-size: 12px; color: ${LFH_COLORS.textSecondary};
 }
 
+/* Cross-Navigation Footer */
 .lfhwc-footer-bar {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 20px;
-  background: ${C.background};
+  background: ${LFH_COLORS.background};
   border-top: 1px solid #E5E8EB;
   flex-shrink: 0;
 }
 .lfhwc-footer-label {
   font-family: 'Inter', sans-serif;
-  font-size: 12px; color: ${C.textSecondary};
+  font-size: 12px; color: ${LFH_COLORS.textSecondary};
   white-space: nowrap;
 }
 .lfhwc-footer-btn {
@@ -391,14 +368,15 @@ function _wcBuildModalStyles(C) {
   border-radius: 6px; cursor: pointer;
   transition: all 0.2s; text-align: center;
   border: 1px solid #E5E8EB;
-  background: ${C.background};
-  color: ${C.textPrimary};
+  background: ${LFH_COLORS.background};
+  color: ${LFH_COLORS.textPrimary};
 }
 .lfhwc-footer-btn:hover {
-  border-color: ${C.primaryRed};
-  color: ${C.primaryRed};
+  border-color: ${LFH_COLORS.primaryRed};
+  color: ${LFH_COLORS.primaryRed};
 }
 
+/* Mobile Responsive */
 @media (max-width: 500px) {
   .lfhwc-modal {
     width: 100% !important; height: 100% !important;
