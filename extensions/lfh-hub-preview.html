@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LFH Hub Modal - Preview</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 20px; padding: 40px 20px;
+    }
+    h1 {
+      font-size: 24px; color: #42494e;
+      text-align: center;
+    }
+    .controls {
+      display: flex; gap: 12px; flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn {
+      padding: 14px 28px; border: none; border-radius: 8px;
+      font-size: 14px; font-weight: 600; cursor: pointer;
+      transition: all 0.2s; font-family: inherit;
+    }
+    .btn-primary {
+      background: #e62b1e; color: #fff;
+    }
+    .btn-primary:hover { background: #c4221a; transform: translateY(-1px); }
+    .btn-outline {
+      background: #fff; color: #42494e;
+      border: 2px solid #E5E8EB;
+    }
+    .btn-outline:hover { border-color: #e62b1e; color: #e62b1e; }
+    .btn-small {
+      padding: 10px 20px; font-size: 12px;
+    }
+    .section {
+      text-align: center; margin-top: 16px;
+    }
+    .section-title {
+      font-size: 12px; font-weight: 700; color: #666;
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 10px;
+    }
+    .info {
+      font-size: 12px; color: #999; margin-top: 20px;
+      text-align: center; max-width: 500px;
+    }
+
+    /* Mock VoiceFlow namespace for testing */
+  </style>
+</head>
+<body>
+  <h1>Last Frontier Hub Modal</h1>
+  <p style="color: #666; font-size: 14px; text-align: center;">
+    Unified tabbed modal combining Tours, Lodges, and Weather
+  </p>
+
+  <div class="controls">
+    <button class="btn btn-primary" onclick="openModal('modal', 'tours')">
+      Open Hub (Modal)
+    </button>
+    <button class="btn btn-outline" onclick="openModal('fullpage', 'tours')">
+      Open Hub (Full Page)
+    </button>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Open to specific tab</div>
+    <div class="controls">
+      <button class="btn btn-outline btn-small" onclick="openModal('modal', 'tours')">
+        Tours Tab
+      </button>
+      <button class="btn btn-outline btn-small" onclick="openModal('modal', 'lodges')">
+        Lodges Tab
+      </button>
+      <button class="btn btn-outline btn-small" onclick="openModal('modal', 'weather')">
+        Weather Tab
+      </button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Deep links</div>
+    <div class="controls">
+      <button class="btn btn-outline btn-small" onclick="openModal('modal', 'tours', { tourId: '5day' })">
+        5-Day Tour Detail
+      </button>
+      <button class="btn btn-outline btn-small" onclick="openModal('modal', 'lodges', { lodgeId: 'bell2' })">
+        Bell 2 Lodge Detail
+      </button>
+      <button class="btn btn-outline btn-small" onclick="openModal('modal', 'tours', { tourId: 'safari7' })">
+        Safari Tour Detail
+      </button>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-title">Device simulation</div>
+    <div class="controls">
+      <button class="btn btn-outline btn-small" onclick="openModal('modal', 'tours', { device_type: 'mobile' })">
+        Mobile (375px sim)
+      </button>
+    </div>
+  </div>
+
+  <div class="info">
+    <strong>Event log:</strong> Open browser console to see VoiceFlow interact calls.
+    <br>All <code>ext_user_action</code> and <code>ext_modal_closed</code> events are logged.
+  </div>
+
+  <!-- Mock VoiceFlow namespace -->
+  <script>
+    window.voiceflow = {
+      chat: {
+        interact: (payload) => {
+          console.log('%c[VoiceFlow interact]', 'color: #e62b1e; font-weight: bold;', JSON.stringify(payload, null, 2));
+        },
+        proactive: {
+          push: (msg) => {
+            console.log('%c[VoiceFlow variable]', 'color: #1565C0; font-weight: bold;', JSON.stringify(msg, null, 2));
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- Hub Modal -->
+  <script type="module">
+    import { openHubModal } from './lfh-hub-modal.js';
+
+    // Expose to window for button onclick handlers
+    window.openModal = function(variant, tab, extras = {}) {
+      // Remove existing modal if open
+      const existing = document.getElementById('lfh-hub-modal');
+      if (existing) existing.remove();
+
+      openHubModal({
+        variant,
+        tab,
+        ...extras,
+      });
+    };
+  </script>
+</body>
+</html>
