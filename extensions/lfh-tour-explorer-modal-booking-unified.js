@@ -90,6 +90,7 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
     initialLodgeFilter = 'all',
     onCompareLodges = null,
     onCheckConditions = null,
+    isMobile = false,
   } = config;
 
   // State
@@ -123,8 +124,10 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
 
   // --- Inject Styles ---
   const styleEl = document.createElement('style');
-  styleEl.textContent = buildModalStyles() + buildSlidePanelStyles();
+  styleEl.textContent = buildModalStyles() + buildSlidePanelStyles() + (isMobile ? buildMobileCompareStyles() : '');
   modal.appendChild(styleEl);
+
+  if (isMobile) modal.classList.add('lfhte-mobile');
 
   // --- Header Bar ---
   const headerBar = document.createElement('div');
@@ -708,17 +711,31 @@ export function openTourExplorerModalWithBookingUnified(focusTourId = null, conf
         `<tr><td class="lfhte-compare-label">${row.label}</td>${tours.map((t) => `<td>${row.fn(t)}</td>`).join('')}</tr>`
       ).join('');
 
+    let compareBody;
+    if (isMobile) {
+      const cardsHTML = rows.map((row) => {
+        const valuesHTML = tours.map((t) =>
+          `<div class="lfhte-compare-card-value"><span class="lfhte-compare-card-tour">${t.name}</span><span>${row.fn(t)}</span></div>`
+        ).join('');
+        return `<div class="lfhte-compare-card"><div class="lfhte-compare-card-label">${row.label}</div>${valuesHTML}</div>`;
+      }).join('');
+      compareBody = `<div class="lfhte-compare-cards">${cardsHTML}</div>`;
+    } else {
+      compareBody = `
+        <div class="lfhte-compare-scroll">
+          <table class="lfhte-compare-table">
+            <thead><tr><th></th>${headerCells}</tr></thead>
+            <tbody>${rowsHTML}</tbody>
+          </table>
+        </div>`;
+    }
+
     compare.innerHTML = `
       <div class="lfhte-compare-header">
         <button class="lfhte-back-btn" id="lfhte-compare-back">&larr; Back to Tours</button>
         <h2 class="lfhte-compare-title">Comparing ${tours.length} Tours</h2>
       </div>
-      <div class="lfhte-compare-scroll">
-        <table class="lfhte-compare-table">
-          <thead><tr><th></th>${headerCells}</tr></thead>
-          <tbody>${rowsHTML}</tbody>
-        </table>
-      </div>
+      ${compareBody}
       <div class="lfhte-compare-actions">
         <button class="lfhte-btn-outline" id="lfhte-compare-clear">Clear Comparison</button>
       </div>
@@ -1234,7 +1251,6 @@ function buildModalStyles() {
 @media (max-width: 500px) {
   .lfhte-stats-bar { grid-template-columns: repeat(2, 1fr); }
   .lfhte-pricing-table { display: block; overflow-x: auto; }
-  .lfhte-compare-table { min-width: 500px; }
   .lfhte-hero-image { height: 200px; }
   .lfhte-filter-bar { padding: 10px 12px; }
   .lfhte-filter-group { min-width: 100px; }
@@ -1307,6 +1323,35 @@ function buildSlidePanelStyles() {
 
 @media (max-width: 600px) {
   .lfhte-sp-panel { width: 100%; max-width: 100%; }
+}
+`;
+}
+
+// ============================================================================
+// MOBILE COMPARE STYLES (stacked cards instead of table)
+// ============================================================================
+
+function buildMobileCompareStyles() {
+  return `
+.lfhte-compare-cards {
+  display: flex; flex-direction: column; gap: 10px;
+  padding: 0 2px; flex: 1; overflow-y: auto;
+}
+.lfhte-compare-card {
+  border: 1px solid ${LFH_COLORS.border}; border-radius: 8px; overflow: hidden;
+}
+.lfhte-compare-card-label {
+  padding: 10px 14px; background: ${LFH_COLORS.textPrimary}; color: #fff;
+  font-size: 13px; font-weight: 700;
+}
+.lfhte-compare-card-value {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 14px; border-bottom: 1px solid ${LFH_COLORS.border};
+  font-size: 12px; color: ${LFH_COLORS.textPrimary};
+}
+.lfhte-compare-card-value:last-child { border-bottom: none; }
+.lfhte-compare-card-tour {
+  font-weight: 700; font-size: 12px; flex-shrink: 0; margin-right: 12px;
 }
 `;
 }

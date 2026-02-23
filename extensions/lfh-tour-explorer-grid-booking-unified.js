@@ -207,9 +207,12 @@ export const LFHTourExplorerGridBookingUnified = {
       }, 50);
     }
 
+    const isMobile = window.innerWidth <= 500;
+
     const modalConfig = {
       bookingVariant,
       webhookUrl,
+      isMobile,
       onCompareLodges: (focusLodge) => openLodgeCompareModal(focusLodge || null),
       onCheckConditions: () => openWeatherConditionsModal(),
     };
