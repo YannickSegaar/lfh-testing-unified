@@ -300,6 +300,8 @@ export function renderToursTab(container, config, savedState) {
       .map(bf => `<span class="lfhte-best-for-badge">${bf}</span>`)
       .join('');
 
+    const galleryCount = tour.galleryImages.length;
+
     detail.innerHTML = `
       <div class="lfhte-detail-header">
         <button class="lfhte-back-btn" id="lfhte-back-to-grid">&larr; All Tours</button>
@@ -317,7 +319,14 @@ export function renderToursTab(container, config, savedState) {
           </div>
         </div>
 
-        <div class="lfhte-gallery-strip">${galleryHTML}</div>
+        ${isMobile ? `
+          <button class="lfhte-collapse-toggle lfhte-gallery-toggle" id="lfhte-gallery-toggle">
+            Gallery (${galleryCount} photos) <span class="lfhte-toggle-arrow">&#9662;</span>
+          </button>
+          <div class="lfhte-gallery-strip lfhte-gallery-collapsed">${galleryHTML}</div>
+        ` : `
+          <div class="lfhte-gallery-strip">${galleryHTML}</div>
+        `}
 
         <div class="lfhte-detail-section">
           <p class="lfhte-full-desc">${tour.description}</p>
@@ -353,11 +362,18 @@ export function renderToursTab(container, config, savedState) {
         </div>
 
         <div class="lfhte-detail-section">
-          <h3 class="lfhte-section-title">What's Included</h3>
-          <div class="lfhte-included-grid">${includedHTML}</div>
+          ${isMobile ? `
+            <h3 class="lfhte-section-title lfhte-included-toggle" id="lfhte-included-toggle">
+              <span class="lfhte-toggle-arrow">&#9656;</span> What's Included
+            </h3>
+            <div class="lfhte-included-grid lfhte-included-collapsed">${includedHTML}</div>
+          ` : `
+            <h3 class="lfhte-section-title">What's Included</h3>
+            <div class="lfhte-included-grid">${includedHTML}</div>
+          `}
         </div>
 
-        <div class="lfhte-detail-actions">
+        <div class="lfhte-detail-actions lfhte-detail-actions-bottom">
           <div class="lfhte-actions-row">
             <button class="lfhte-btn-primary lfhte-action-book" data-tour-id="${tour.id}">I Want to Book</button>
             <button class="lfhte-btn-outline lfhte-action-ask" data-tour-id="${tour.id}">Ask About This Tour</button>
@@ -368,6 +384,13 @@ export function renderToursTab(container, config, savedState) {
           </div>
         </div>
       </div>
+
+      ${isMobile ? `
+        <div class="lfhte-sticky-cta">
+          <button class="lfhte-btn-primary lfhte-sticky-book" data-tour-id="${tour.id}">Book</button>
+          <button class="lfhte-btn-outline lfhte-sticky-ask" data-tour-id="${tour.id}">Ask</button>
+        </div>
+      ` : ''}
     `;
 
     content.innerHTML = '';
@@ -432,6 +455,45 @@ export function renderToursTab(container, config, savedState) {
       onActionTaken();
       onCloseHub();
     });
+
+    // Mobile: gallery toggle
+    if (isMobile) {
+      detail.querySelector('#lfhte-gallery-toggle')?.addEventListener('click', () => {
+        const strip = detail.querySelector('.lfhte-gallery-strip');
+        const arrow = detail.querySelector('#lfhte-gallery-toggle .lfhte-toggle-arrow');
+        strip.classList.toggle('lfhte-gallery-collapsed');
+        strip.classList.toggle('lfhte-gallery-expanded');
+        arrow.innerHTML = strip.classList.contains('lfhte-gallery-collapsed') ? '&#9662;' : '&#9652;';
+      });
+
+      // Mobile: included toggle
+      detail.querySelector('#lfhte-included-toggle')?.addEventListener('click', () => {
+        const grid = detail.querySelector('.lfhte-included-grid');
+        const arrow = detail.querySelector('#lfhte-included-toggle .lfhte-toggle-arrow');
+        grid.classList.toggle('lfhte-included-collapsed');
+        grid.classList.toggle('lfhte-included-expanded');
+        arrow.innerHTML = grid.classList.contains('lfhte-included-collapsed') ? '&#9656;' : '&#9662;';
+      });
+
+      // Mobile: sticky CTA buttons
+      detail.querySelector('.lfhte-sticky-book')?.addEventListener('click', () => {
+        openReplaceBooking(tour);
+      });
+
+      detail.querySelector('.lfhte-sticky-ask')?.addEventListener('click', () => {
+        interactWithAgent('ext_user_action', {
+          action: 'tour_inquiry',
+          source: 'tour_explorer',
+          tourId: tour.id,
+          tourName: tour.name,
+          lodge: tour.lodges.join(', '),
+          duration: tour.duration,
+        });
+        _state.actionTaken = true;
+        onActionTaken();
+        onCloseHub();
+      });
+    }
 
     // Lodge name links in pricing table → switch to lodges tab
     detail.querySelectorAll('.lfhte-lodge-name-link').forEach(link => {
@@ -1084,14 +1146,52 @@ export function buildToursStyles() {
   .lfhte-sp-panel { width: 100%; max-width: 100%; }
 }
 
+/* Mobile Progressive Disclosure */
+.lfhte-collapse-toggle {
+  display: flex; align-items: center; gap: 6px;
+  width: 100%; padding: 8px 12px; margin-bottom: 8px;
+  background: ${LFH_COLORS.infoBox}; border: 1px solid ${LFH_COLORS.border};
+  border-radius: 6px; font-family: 'Inter', sans-serif;
+  font-size: 12px; font-weight: 600; color: ${LFH_COLORS.textSecondary};
+  cursor: pointer; transition: all 0.2s;
+}
+.lfhte-collapse-toggle:hover { border-color: ${LFH_COLORS.primaryRed}; color: ${LFH_COLORS.textPrimary}; }
+.lfhte-toggle-arrow { font-size: 10px; margin-left: auto; }
+
+.lfhte-gallery-collapsed { display: none !important; }
+.lfhte-gallery-expanded { display: flex !important; }
+
+.lfhte-included-toggle {
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+}
+.lfhte-included-toggle:hover { color: ${LFH_COLORS.primaryRed}; }
+.lfhte-included-collapsed { display: none !important; }
+.lfhte-included-expanded { display: grid !important; }
+
+.lfhte-sticky-cta {
+  display: flex; gap: 8px; padding: 10px 16px;
+  background: #fff; border-top: 1px solid ${LFH_COLORS.border};
+  flex-shrink: 0; box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+}
+.lfhte-sticky-cta .lfhte-btn-primary,
+.lfhte-sticky-cta .lfhte-btn-outline {
+  flex: 1; padding: 12px 16px; font-size: 13px; font-weight: 700;
+  min-height: 44px;
+}
+
 @media (max-width: 500px) {
   .lfhte-stats-bar { grid-template-columns: repeat(2, 1fr); }
+  .lfhte-stat-box { padding: 8px 6px; }
+  .lfhte-stat-value { font-size: 12px; }
+  .lfhte-stat-label { font-size: 9px; }
   .lfhte-pricing-table { display: block; overflow-x: auto; }
-  .lfhte-hero-image { height: 200px; }
+  .lfhte-hero-image { height: 150px; }
   .lfhte-filter-bar { padding: 10px 12px; }
-  .lfhte-filter-group { min-width: 100px; }
+  .lfhte-filter-group { min-width: 0; flex: 1 1 30%; }
   .lfhte-filter-group select { padding: 6px 8px; }
+  .lfhte-results-count { display: none; }
   .lfhte-included-grid { grid-template-columns: 1fr; }
+  .lfhte-detail-actions-bottom .lfhte-actions-row:first-child { display: none; }
 }
 `;
 }

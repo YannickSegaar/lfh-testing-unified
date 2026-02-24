@@ -40,7 +40,7 @@ export function getLodgesTabState() {
  * @param {Object|null} savedState - Restored state from tab snapshot
  */
 export function renderLodgesTab(container, config, savedState) {
-  const { onSwitchTab, onActionTaken, onCloseHub, focusLodge, lodgeId } = config;
+  const { onSwitchTab, onActionTaken, onCloseHub, focusLodge, lodgeId, isMobile = false } = config;
 
   // Initialize state
   const initialTab = focusLodge || lodgeId || savedState?.activeSubTab || 'overview';
@@ -165,8 +165,15 @@ export function renderLodgesTab(container, config, savedState) {
         </div>
 
         <div class="lfhlc-comparison-section">
-          <h3 class="lfhlc-section-title">Side-by-Side Comparison</h3>
-          <div class="lfhlc-comparison-table">
+          ${isMobile ? `
+            <h3 class="lfhlc-section-title lfhlc-comparison-toggle" id="lfhlc-comparison-toggle">
+              Side-by-Side Comparison <span class="lfhlc-toggle-arrow">&#9656;</span>
+            </h3>
+            <div class="lfhlc-comparison-table lfhlc-comparison-collapsed" id="lfhlc-comparison-content">
+          ` : `
+            <h3 class="lfhlc-section-title">Side-by-Side Comparison</h3>
+            <div class="lfhlc-comparison-table">
+          `}
             <div class="lfhlc-comparison-header">
               <div class="lfhlc-comp-cell lfhlc-comp-label"></div>
               <div class="lfhlc-comp-cell lfhlc-comp-lodge">Bell 2 Lodge</div>
@@ -224,6 +231,17 @@ export function renderLodgesTab(container, config, savedState) {
       onCloseHub();
     });
 
+    // Mobile: comparison table toggle
+    if (isMobile) {
+      content.querySelector('#lfhlc-comparison-toggle')?.addEventListener('click', () => {
+        const table = content.querySelector('#lfhlc-comparison-content');
+        const arrow = content.querySelector('#lfhlc-comparison-toggle .lfhlc-toggle-arrow');
+        table.classList.toggle('lfhlc-comparison-collapsed');
+        table.classList.toggle('lfhlc-comparison-expanded');
+        arrow.innerHTML = table.classList.contains('lfhlc-comparison-collapsed') ? '&#9656;' : '&#9662;';
+      });
+    }
+
   }
 
   // ========================================================================
@@ -277,7 +295,14 @@ export function renderLodgesTab(container, config, savedState) {
           </div>
         </div>
 
-        <div class="lfhlc-run-photos-section">
+        ${isMobile ? `
+          <button class="lfhlc-collapse-toggle lfhlc-run-photos-toggle" id="lfhlc-run-photos-toggle">
+            Run Photos <span class="lfhlc-toggle-arrow">&#9656;</span>
+          </button>
+          <div class="lfhlc-run-photos-section lfhlc-run-photos-collapsed" id="lfhlc-run-photos-content">
+        ` : `
+          <div class="lfhlc-run-photos-section">
+        `}
           <div class="lfhlc-run-photos-group">
             <p class="lfhlc-run-photos-label">Bell 2 Lodge Runs</p>
             <div class="lfhlc-run-photos-strip">${bell2RunPhotosHTML}</div>
@@ -329,6 +354,17 @@ export function renderLodgesTab(container, config, savedState) {
         showRunPhotoLightbox(photo.dataset.lodge, parseInt(photo.dataset.index));
       });
     });
+
+    // Mobile: run photos toggle
+    if (isMobile) {
+      content.querySelector('#lfhlc-run-photos-toggle')?.addEventListener('click', () => {
+        const section = content.querySelector('#lfhlc-run-photos-content');
+        const arrow = content.querySelector('#lfhlc-run-photos-toggle .lfhlc-toggle-arrow');
+        section.classList.toggle('lfhlc-run-photos-collapsed');
+        section.classList.toggle('lfhlc-run-photos-expanded');
+        arrow.innerHTML = section.classList.contains('lfhlc-run-photos-collapsed') ? '&#9656;' : '&#9662;';
+      });
+    }
   }
 
   // ========================================================================
@@ -347,6 +383,8 @@ export function renderLodgesTab(container, config, savedState) {
     const activitiesHTML = lodge.features.activities.map(a => `<span class="lfhlc-feature-tag">${a}</span>`).join('');
     const terrainCharsHTML = lodge.terrain.characteristics.map(c => `<span class="lfhlc-feature-tag">${c}</span>`).join('');
 
+    const galleryCount = lodge.gallery.length;
+
     content.innerHTML = `
       <div class="lfhlc-detail">
         <div class="lfhlc-detail-scroll">
@@ -359,7 +397,14 @@ export function renderLodgesTab(container, config, savedState) {
             </div>
           </div>
 
-          <div class="lfhlc-gallery-strip">${galleryHTML}</div>
+          ${isMobile ? `
+            <button class="lfhlc-collapse-toggle lfhlc-gallery-toggle" id="lfhlc-gallery-toggle">
+              Gallery (${galleryCount} photos) <span class="lfhlc-toggle-arrow">&#9662;</span>
+            </button>
+            <div class="lfhlc-gallery-strip lfhlc-gallery-collapsed">${galleryHTML}</div>
+          ` : `
+            <div class="lfhlc-gallery-strip">${galleryHTML}</div>
+          `}
 
           <div class="lfhlc-detail-section">
             <p class="lfhlc-full-desc">${lodge.fullDescription}</p>
@@ -393,31 +438,57 @@ export function renderLodgesTab(container, config, savedState) {
               <h4 class="lfhlc-feature-title">Dining</h4>
               <p class="lfhlc-feature-text">${lodge.features.dining}</p>
             </div>
-            <div class="lfhlc-feature-section">
-              <h4 class="lfhlc-feature-title">Amenities</h4>
-              <div class="lfhlc-feature-tags">${amenitiesHTML}</div>
-            </div>
-            <div class="lfhlc-feature-section">
-              <h4 class="lfhlc-feature-title">Activities</h4>
-              <div class="lfhlc-feature-tags">${activitiesHTML}</div>
-            </div>
-            <div class="lfhlc-feature-section">
-              <h4 class="lfhlc-feature-title">Connectivity</h4>
-              <p class="lfhlc-feature-text">${lodge.features.connectivity}</p>
-            </div>
-            <div class="lfhlc-feature-section">
-              <h4 class="lfhlc-feature-title">Helipad Access</h4>
-              <p class="lfhlc-feature-text">${lodge.features.helipad}</p>
-            </div>
+            ${isMobile ? '' : `
+              <div class="lfhlc-feature-section">
+                <h4 class="lfhlc-feature-title">Amenities</h4>
+                <div class="lfhlc-feature-tags">${amenitiesHTML}</div>
+              </div>
+              <div class="lfhlc-feature-section">
+                <h4 class="lfhlc-feature-title">Activities</h4>
+                <div class="lfhlc-feature-tags">${activitiesHTML}</div>
+              </div>
+              <div class="lfhlc-feature-section">
+                <h4 class="lfhlc-feature-title">Connectivity</h4>
+                <p class="lfhlc-feature-text">${lodge.features.connectivity}</p>
+              </div>
+              <div class="lfhlc-feature-section">
+                <h4 class="lfhlc-feature-title">Helipad Access</h4>
+                <p class="lfhlc-feature-text">${lodge.features.helipad}</p>
+              </div>
+            `}
           </div>
+
+          ${isMobile ? `
+            <button class="lfhlc-collapse-toggle lfhlc-features-more-toggle" id="lfhlc-features-more-toggle">
+              Show 4 more features <span class="lfhlc-toggle-arrow">&#9662;</span>
+            </button>
+            <div class="lfhlc-features-grid lfhlc-features-hidden" id="lfhlc-features-hidden">
+              <div class="lfhlc-feature-section">
+                <h4 class="lfhlc-feature-title">Amenities</h4>
+                <div class="lfhlc-feature-tags">${amenitiesHTML}</div>
+              </div>
+              <div class="lfhlc-feature-section">
+                <h4 class="lfhlc-feature-title">Activities</h4>
+                <div class="lfhlc-feature-tags">${activitiesHTML}</div>
+              </div>
+              <div class="lfhlc-feature-section">
+                <h4 class="lfhlc-feature-title">Connectivity</h4>
+                <p class="lfhlc-feature-text">${lodge.features.connectivity}</p>
+              </div>
+              <div class="lfhlc-feature-section">
+                <h4 class="lfhlc-feature-title">Helipad Access</h4>
+                <p class="lfhlc-feature-text">${lodge.features.helipad}</p>
+              </div>
+            </div>
+          ` : ''}
 
           <div class="lfhlc-terrain-section">
             <button class="lfhlc-terrain-toggle" id="lfhlc-terrain-toggle">
               <span class="lfhlc-terrain-toggle-icon">⛰</span>
               Terrain Information
-              <span class="lfhlc-terrain-arrow" style="transform: rotate(180deg)">▾</span>
+              <span class="lfhlc-terrain-arrow" style="transform: ${isMobile ? 'rotate(0deg)' : 'rotate(180deg)'}">▾</span>
             </button>
-            <div class="lfhlc-terrain-content open" id="lfhlc-terrain-content">
+            <div class="lfhlc-terrain-content ${isMobile ? '' : 'open'}" id="lfhlc-terrain-content">
               <div class="lfhlc-terrain-map">
                 <img src="${lodge.terrain.aerialImage}" alt="${lodge.name} terrain" class="lfhlc-terrain-image" />
               </div>
@@ -486,6 +557,29 @@ export function renderLodgesTab(container, config, savedState) {
         arrow.style.transform = 'rotate(180deg)';
       }
     });
+
+    // Mobile: gallery toggle
+    if (isMobile) {
+      content.querySelector('#lfhlc-gallery-toggle')?.addEventListener('click', () => {
+        const strip = content.querySelector('.lfhlc-gallery-strip');
+        const arrow = content.querySelector('#lfhlc-gallery-toggle .lfhlc-toggle-arrow');
+        strip.classList.toggle('lfhlc-gallery-collapsed');
+        strip.classList.toggle('lfhlc-gallery-expanded');
+        arrow.innerHTML = strip.classList.contains('lfhlc-gallery-collapsed') ? '&#9662;' : '&#9652;';
+      });
+
+      // Mobile: features more toggle
+      content.querySelector('#lfhlc-features-more-toggle')?.addEventListener('click', () => {
+        const grid = content.querySelector('#lfhlc-features-hidden');
+        const btn = content.querySelector('#lfhlc-features-more-toggle');
+        const arrow = btn.querySelector('.lfhlc-toggle-arrow');
+        grid.classList.toggle('lfhlc-features-hidden');
+        grid.classList.toggle('lfhlc-features-shown');
+        const isHidden = grid.classList.contains('lfhlc-features-hidden');
+        btn.childNodes[0].textContent = isHidden ? 'Show 4 more features ' : 'Hide extra features ';
+        arrow.innerHTML = isHidden ? '&#9662;' : '&#9652;';
+      });
+    }
 
     // Book CTA → switch to tours tab filtered to this lodge
     content.querySelector('.lfhlc-action-book')?.addEventListener('click', () => {
@@ -1035,6 +1129,39 @@ export function buildLodgesStyles() {
   .lfhlc-lightbox-caption { font-size: 13px; padding: 0 16px; }
 }
 
+/* Mobile Progressive Disclosure */
+.lfhlc-collapse-toggle {
+  display: flex; align-items: center; gap: 6px;
+  width: 100%; padding: 8px 12px; margin-bottom: 8px;
+  background: ${LFH_COLORS.infoBox}; border: 1px solid ${LFH_COLORS.border};
+  border-radius: 6px; font-family: 'Inter', sans-serif;
+  font-size: 12px; font-weight: 600; color: ${LFH_COLORS.textSecondary};
+  cursor: pointer; transition: all 0.2s;
+}
+.lfhlc-collapse-toggle:hover { border-color: ${LFH_COLORS.primaryRed}; color: ${LFH_COLORS.textPrimary}; }
+.lfhlc-toggle-arrow { font-size: 10px; margin-left: auto; }
+
+.lfhlc-gallery-collapsed { display: none !important; }
+.lfhlc-gallery-expanded { display: flex !important; }
+
+.lfhlc-comparison-toggle {
+  cursor: pointer; display: flex; align-items: center; gap: 6px;
+}
+.lfhlc-comparison-toggle:hover { color: ${LFH_COLORS.primaryRed}; }
+.lfhlc-comparison-collapsed { display: none !important; }
+.lfhlc-comparison-expanded { display: block !important; }
+
+.lfhlc-features-hidden { display: none !important; }
+.lfhlc-features-shown { display: grid !important; }
+.lfhlc-features-more-toggle {
+  border-style: dashed;
+  margin-bottom: 16px;
+}
+
+.lfhlc-run-photos-collapsed { display: none !important; }
+.lfhlc-run-photos-expanded { display: block !important; }
+.lfhlc-run-photos-toggle { margin-bottom: 12px; }
+
 @media (max-width: 500px) {
   .lfhlc-comparison-header, .lfhlc-comparison-row { grid-template-columns: 80px 1fr 1fr; }
   .lfhlc-comp-cell { padding: 8px 6px; font-size: 10px; }
@@ -1043,11 +1170,12 @@ export function buildLodgesStyles() {
   .lfhlc-gallery-thumb { flex: 0 0 100px; height: 66px; }
   .lfhlc-terrain-row { flex-direction: column; gap: 4px; }
   .lfhlc-terrain-label { flex: none; }
-  .lfhlc-tab { min-height: 40px; padding: 8px 12px; font-size: 10px; }
-  .lfhlc-tab-bar { padding: 8px 12px; }
+  .lfhlc-tab { min-height: 32px; padding: 6px 10px; font-size: 10px; border-radius: 16px; }
+  .lfhlc-tab-bar { padding: 8px 12px; gap: 4px; }
   .lfhlc-run-photo { flex: 0 0 140px; height: 78px; }
   .lfhlc-section-title { font-size: 13px; }
-  .lfhlc-hero-image { height: 180px; }
+  .lfhlc-hero-image { height: 150px; }
+  .lfhlc-terrain-card-img { height: 120px; }
   .lfhlc-play-btn { width: 48px; height: 48px; }
   .lfhlc-play-triangle { border-left-width: 12px; border-top-width: 8px; border-bottom-width: 8px; margin-left: 3px; }
   .lfhlc-content { padding: 14px; }

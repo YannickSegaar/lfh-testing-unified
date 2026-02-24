@@ -399,9 +399,11 @@ function buildHubStyles() {
 
 /* Mobile Responsive */
 @media (max-width: 500px) {
-  .lfhub-header-title { font-size: 14px; letter-spacing: 1px; }
-  .lfhub-header-bar { padding: 10px 16px; }
-  .lfhub-tab { padding: 10px 8px; font-size: 11px; }
+  .lfhub-header-title { font-size: 13px; letter-spacing: 1px; }
+  .lfhub-header-bar { padding: 8px 12px; }
+  .lfhub-close-btn { width: 36px; height: 36px; font-size: 24px; }
+  .lfhub-tab { padding: 8px 6px; font-size: 10px; }
+  .lfhub-tab-bar { gap: 4px; }
   .lfhub-tab-icon { width: 14px; height: 14px; }
   .lfhub-tab-icon svg { width: 14px; height: 14px; }
 }
