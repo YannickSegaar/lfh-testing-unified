@@ -38,7 +38,7 @@ export function getWeatherTabState() {
  * @param {Object|null} savedState - Restored state from tab snapshot
  */
 export function renderWeatherTab(container, config, savedState) {
-  const { onSwitchTab, onActionTaken } = config;
+  const { onSwitchTab, onActionTaken, isMobile = false } = config;
 
   _state = {
     loaded: savedState?.loaded || false,
@@ -60,42 +60,47 @@ export function renderWeatherTab(container, config, savedState) {
   `;
   content.appendChild(loading);
 
-  // iframe
-  const iframe = document.createElement('iframe');
-  iframe.src = WEATHER_URL;
-  iframe.sandbox = 'allow-same-origin allow-scripts allow-popups allow-forms';
-  iframe.style.cssText = `
-    width: 100%; height: 100%; border: none;
-    opacity: 0; transition: opacity 0.4s ease;
-    position: absolute; top: 0; left: 0;
-  `;
-  iframe.title = 'Last Frontier Heliskiing - Weather Conditions';
-  content.appendChild(iframe);
-
   container.appendChild(content);
 
   silentVariableUpdate('ext_last_action', 'weather_conditions_opened');
 
-  // --- iframe load / fallback logic ---
-  const timeoutId = setTimeout(() => {
-    if (!_state.loaded) showFallback();
-  }, IFRAME_TIMEOUT);
+  // On mobile, skip iframe entirely — show fallback immediately
+  if (isMobile) {
+    showFallback();
+  } else {
+    // iframe (desktop only)
+    const iframe = document.createElement('iframe');
+    iframe.src = WEATHER_URL;
+    iframe.sandbox = 'allow-same-origin allow-scripts allow-popups allow-forms';
+    iframe.style.cssText = `
+      width: 100%; height: 100%; border: none;
+      opacity: 0; transition: opacity 0.4s ease;
+      position: absolute; top: 0; left: 0;
+    `;
+    iframe.title = 'Last Frontier Heliskiing - Weather Conditions';
+    content.appendChild(iframe);
 
-  iframe.addEventListener('load', () => {
-    _state.loaded = true;
-    clearTimeout(timeoutId);
-    loading.style.opacity = '0';
-    loading.style.pointerEvents = 'none';
-    iframe.style.opacity = '1';
-    setTimeout(() => loading.remove(), 400);
-  });
+    // --- iframe load / fallback logic ---
+    const timeoutId = setTimeout(() => {
+      if (!_state.loaded) showFallback();
+    }, IFRAME_TIMEOUT);
 
-  iframe.addEventListener('error', () => {
-    if (!_state.loaded) {
+    iframe.addEventListener('load', () => {
+      _state.loaded = true;
       clearTimeout(timeoutId);
-      showFallback();
-    }
-  });
+      loading.style.opacity = '0';
+      loading.style.pointerEvents = 'none';
+      iframe.style.opacity = '1';
+      setTimeout(() => loading.remove(), 400);
+    });
+
+    iframe.addEventListener('error', () => {
+      if (!_state.loaded) {
+        clearTimeout(timeoutId);
+        showFallback();
+      }
+    });
+  }
 
   function showFallback() {
     _state.loaded = true;

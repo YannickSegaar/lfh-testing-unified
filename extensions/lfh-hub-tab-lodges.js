@@ -1053,7 +1053,7 @@ export function buildLodgesStyles() {
   transition: max-height 0.3s ease, padding 0.3s ease;
   padding: 0 18px;
 }
-.lfhlc-terrain-content.open { max-height: 500px; padding: 0 18px 18px; }
+.lfhlc-terrain-content.open { max-height: 800px; padding: 0 18px 18px; }
 .lfhlc-terrain-map { margin-bottom: 16px; }
 .lfhlc-terrain-image { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; }
 .lfhlc-terrain-row {

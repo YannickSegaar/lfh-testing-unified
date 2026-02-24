@@ -618,7 +618,7 @@ export function renderToursTab(container, config, savedState) {
     if (isMobile) {
       const cardsHTML = rows.map(row => {
         const valuesHTML = tours.map(t =>
-          `<div class="lfhte-compare-card-value"><span class="lfhte-compare-card-tour">${t.name}</span><span>${row.fn(t)}</span></div>`
+          `<div class="lfhte-compare-card-value"><span class="lfhte-compare-card-tour">${t.name}</span><span class="lfhte-compare-card-data">${row.fn(t)}</span></div>`
         ).join('');
         return `<div class="lfhte-compare-card"><div class="lfhte-compare-card-label">${row.label}</div>${valuesHTML}</div>`;
       }).join('');
@@ -1091,13 +1091,16 @@ export function buildToursStyles() {
   font-size: 13px; font-weight: 700;
 }
 .lfhte-compare-card-value {
-  display: flex; justify-content: space-between; align-items: center;
+  display: flex; flex-direction: column; gap: 2px;
   padding: 10px 14px; border-bottom: 1px solid ${LFH_COLORS.border};
   font-size: 12px; color: ${LFH_COLORS.textPrimary};
 }
 .lfhte-compare-card-value:last-child { border-bottom: none; }
 .lfhte-compare-card-tour {
-  font-weight: 700; font-size: 12px; flex-shrink: 0; margin-right: 12px;
+  font-weight: 600; font-size: 11px; color: ${LFH_COLORS.primaryRed};
+}
+.lfhte-compare-card-data {
+  font-size: 13px; font-weight: 500; color: ${LFH_COLORS.textPrimary};
 }
 
 /* Slide Panel */
