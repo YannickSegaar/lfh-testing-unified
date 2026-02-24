@@ -17,7 +17,9 @@
 * - v5.1: Disable chat input for ALL renders (not just force handoff), re-enable after submission
 * - v5.2: Render-time alert webhook for force handoff (fires even if user abandons before submit)
 *
-* @version 5.2.0-unified
+* - v5.3: Mobile-optimized layout (compact intent cards, pill seasons/lodges), scroll-to-top on step transition
+*
+* @version 5.3.0-unified
 * @author Last Frontier Heliskiing / RomAIx
 */
 
@@ -37,10 +39,12 @@ export const LastFrontierLeadForm_v4_Unified = {
       webhookUrl = 'https://n8n.romaix-n8n.xyz/webhook/9d6eaed8-9595-473f-9173-9d7b184a06df',
       alertWebhookUrl = '',           // n8n force_handoff alert endpoint
       isForceHandoff = false,         // triggers disable-input + alert webhook
+      mode = '',                       // 'capture_lead' or 'connect_to_team' (from contact_team exit)
       conversationHistory = null,
       conversationId = null,
       userId = null,
       animateIn = true,
+      device_type = 'desktop',
       // Visitor context from launch payload (browser data)
       visitorContext = {},
       // Intent signals from conversation (set by AI before form display)
@@ -55,6 +59,8 @@ export const LastFrontierLeadForm_v4_Unified = {
         conversationSummary: '',
       },
     } = trace.payload || {};
+
+    const isMobile = device_type === 'mobile';
 
     // Force handoff header overrides
     const displayTitle = isForceHandoff
@@ -81,7 +87,7 @@ export const LastFrontierLeadForm_v4_Unified = {
     element.innerHTML = '';
 
     const container = document.createElement('div');
-    container.className = 'lfh-lead-form-v3';
+    container.className = 'lfh-lead-form-v3' + (isMobile ? ' lfh-mobile' : '');
 
     if (animateIn) {
       container.style.opacity = '0';
@@ -982,6 +988,87 @@ export const LastFrontierLeadForm_v4_Unified = {
 .lfh-v3-content::-webkit-scrollbar-thumb:hover {
   background: #CBD5E1;
 }
+
+/* ===== MOBILE OPTIMIZATIONS ===== */
+.lfh-mobile .lfh-v3-header {
+  padding: 16px 16px 20px 16px;
+}
+
+.lfh-mobile .lfh-v3-header-label {
+  font-size: 16px;
+  letter-spacing: 2px;
+}
+
+/* Mobile intent cards: compact 2x2 grid, no descriptions */
+.lfh-mobile .lfh-v3-intent-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.lfh-mobile .lfh-v3-intent-card {
+  padding: 10px 12px;
+  text-align: center;
+}
+
+.lfh-mobile .lfh-v3-intent-desc {
+  display: none;
+}
+
+.lfh-mobile .lfh-v3-intent-title {
+  font-size: 12px;
+  margin-bottom: 0;
+}
+
+/* Mobile season cards: horizontal pills, text only */
+.lfh-mobile .lfh-v3-season-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lfh-mobile .lfh-v3-season-card {
+  flex: 1 1 auto;
+  min-width: 0;
+  padding: 10px 14px;
+  border-radius: 20px;
+}
+
+.lfh-mobile .lfh-v3-season-icon,
+.lfh-mobile .lfh-v3-season-terrain,
+.lfh-mobile .lfh-v3-season-price,
+.lfh-mobile .lfh-v3-season-snow {
+  display: none;
+}
+
+.lfh-mobile .lfh-v3-season-dates {
+  margin-bottom: 0;
+}
+
+/* Mobile lodge cards: compact name-only chips */
+.lfh-mobile .lfh-v3-lodge-cards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.lfh-mobile .lfh-v3-lodge-card {
+  padding: 10px 12px;
+  justify-content: center;
+  text-align: center;
+}
+
+.lfh-mobile .lfh-v3-lodge-icon-wrapper {
+  display: none;
+}
+
+.lfh-mobile .lfh-v3-lodge-desc {
+  display: none;
+}
+
+.lfh-mobile .lfh-v3-lodge-name {
+  font-size: 12px;
+}
 </style>
 
 <!-- HEADER - Full dark wood background with logo overlay -->
@@ -1728,6 +1815,10 @@ export const LastFrontierLeadForm_v4_Unified = {
         targetStep.classList.add('active');
       }
 
+      // Scroll content container to top on step transition
+      const contentEl = container.querySelector('.lfh-v3-content');
+      if (contentEl) contentEl.scrollTop = 0;
+
       currentStep = stepNum;
       const btns = container.querySelector('#lfh-v3-btns');
 
@@ -1893,7 +1984,7 @@ export const LastFrontierLeadForm_v4_Unified = {
           timestamp: new Date().toISOString(),
         },
         visitorContext: {
-          deviceType: visitorContext.deviceType || '',
+          deviceType: visitorContext.deviceType || device_type || '',
           pageType: visitorContext.pageType || '',
           pageTopic: visitorContext.pageTopic || '',
           timezone: visitorContext.timezone || '',
@@ -1903,8 +1994,9 @@ export const LastFrontierLeadForm_v4_Unified = {
           localHour: visitorContext.localHour || '',
           dayOfWeek: visitorContext.dayOfWeek || '',
         },
-        source: isForceHandoff ? 'Voiceflow Lead Form v5.0 (force_handoff)' : 'Voiceflow Lead Form v5.0',
-        formVersion: '5.0.0',
+        contactMode: mode || (isForceHandoff ? 'force_handoff' : ''),
+        source: isForceHandoff ? 'Voiceflow Lead Form v5.0 (force_handoff)' : mode ? `Voiceflow Lead Form v5.0 (${mode})` : 'Voiceflow Lead Form v5.0',
+        formVersion: '5.3.0',
       };
 
       console.log('Submitting lead form v4.5.0 payload:', JSON.stringify(payload, null, 2));
