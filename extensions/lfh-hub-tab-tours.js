@@ -321,7 +321,9 @@ export function renderToursTab(container, config, savedState) {
 
         ${isMobile ? `
           <button class="lfhte-collapse-toggle lfhte-gallery-toggle" id="lfhte-gallery-toggle">
-            Gallery (${galleryCount} photos) <span class="lfhte-toggle-arrow">&#9662;</span>
+            Gallery (${galleryCount} photos)
+            <span class="lfhte-toggle-hint">Tap to expand</span>
+            <span class="lfhte-toggle-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>
           </button>
           <div class="lfhte-gallery-strip lfhte-gallery-collapsed">${galleryHTML}</div>
         ` : `
@@ -364,7 +366,9 @@ export function renderToursTab(container, config, savedState) {
         <div class="lfhte-detail-section">
           ${isMobile ? `
             <h3 class="lfhte-section-title lfhte-included-toggle" id="lfhte-included-toggle">
-              What's Included <span class="lfhte-toggle-arrow">&#9656;</span>
+              What's Included
+              <span class="lfhte-toggle-hint">Tap to expand</span>
+              <span class="lfhte-toggle-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></span>
             </h3>
             <div class="lfhte-included-grid lfhte-included-collapsed">${includedHTML}</div>
           ` : `
@@ -461,18 +465,28 @@ export function renderToursTab(container, config, savedState) {
       detail.querySelector('#lfhte-gallery-toggle')?.addEventListener('click', () => {
         const strip = detail.querySelector('.lfhte-gallery-strip');
         const arrow = detail.querySelector('#lfhte-gallery-toggle .lfhte-toggle-arrow');
+        const hint = detail.querySelector('#lfhte-gallery-toggle .lfhte-toggle-hint');
         strip.classList.toggle('lfhte-gallery-collapsed');
         strip.classList.toggle('lfhte-gallery-expanded');
-        arrow.innerHTML = strip.classList.contains('lfhte-gallery-collapsed') ? '&#9662;' : '&#9652;';
+        const collapsed = strip.classList.contains('lfhte-gallery-collapsed');
+        arrow.innerHTML = collapsed
+          ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>'
+          : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 15 12 9 18 15"/></svg>';
+        if (hint) hint.textContent = collapsed ? 'Tap to expand' : 'Tap to collapse';
       });
 
       // Mobile: included toggle
       detail.querySelector('#lfhte-included-toggle')?.addEventListener('click', () => {
         const grid = detail.querySelector('.lfhte-included-grid');
         const arrow = detail.querySelector('#lfhte-included-toggle .lfhte-toggle-arrow');
+        const hint = detail.querySelector('#lfhte-included-toggle .lfhte-toggle-hint');
         grid.classList.toggle('lfhte-included-collapsed');
         grid.classList.toggle('lfhte-included-expanded');
-        arrow.innerHTML = grid.classList.contains('lfhte-included-collapsed') ? '&#9656;' : '&#9662;';
+        const collapsed = grid.classList.contains('lfhte-included-collapsed');
+        arrow.innerHTML = collapsed
+          ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>'
+          : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>';
+        if (hint) hint.textContent = collapsed ? 'Tap to expand' : 'Tap to collapse';
       });
 
       // Mobile: sticky CTA buttons
@@ -663,7 +677,7 @@ export function renderToursTab(container, config, savedState) {
     const idx = _state.compareTours.indexOf(tourId);
     if (idx >= 0) {
       _state.compareTours.splice(idx, 1);
-    } else if (_state.compareTours.length < 3) {
+    } else {
       _state.compareTours.push(tourId);
     }
     updateCompareTray();
@@ -1167,15 +1181,34 @@ export function buildToursStyles() {
   cursor: pointer; transition: all 0.2s;
 }
 .lfhte-collapse-toggle:hover { border-color: ${LFH_COLORS.primaryRed}; color: ${LFH_COLORS.textPrimary}; }
-.lfhte-toggle-arrow { font-size: 10px; margin-left: auto; }
+.lfhte-toggle-hint {
+  margin-left: auto; font-size: 10px; font-weight: 400;
+  color: ${LFH_COLORS.primaryRed}; opacity: 0.8;
+  font-style: italic; letter-spacing: 0.2px;
+}
+.lfhte-toggle-arrow {
+  display: flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; border-radius: 50%;
+  background: ${LFH_COLORS.border}; color: ${LFH_COLORS.textPrimary};
+  flex-shrink: 0; transition: all 0.2s;
+}
+.lfhte-collapse-toggle:hover .lfhte-toggle-arrow,
+.lfhte-included-toggle:hover .lfhte-toggle-arrow {
+  background: ${LFH_COLORS.primaryRed}; color: #fff;
+}
 
 .lfhte-gallery-collapsed { display: none !important; }
 .lfhte-gallery-expanded { display: flex !important; }
 
 .lfhte-included-toggle {
   cursor: pointer; display: flex; align-items: center; gap: 6px;
+  padding: 10px 12px; margin: 0 -12px 10px;
+  background: ${LFH_COLORS.infoBox}; border: 1px solid ${LFH_COLORS.border};
+  border-radius: 6px; transition: all 0.2s;
 }
-.lfhte-included-toggle:hover { color: ${LFH_COLORS.primaryRed}; }
+.lfhte-included-toggle:hover {
+  color: ${LFH_COLORS.primaryRed}; border-color: ${LFH_COLORS.primaryRed};
+}
 .lfhte-included-collapsed { display: none !important; }
 .lfhte-included-expanded { display: grid !important; }
 
