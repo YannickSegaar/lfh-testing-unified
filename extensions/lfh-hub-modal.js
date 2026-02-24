@@ -6,7 +6,7 @@
  * Lives alongside existing standalone extensions — triggered by ext_hubModal trace.
  *
  * Uses the Unified Event Architecture for all agent interactions:
- *   - ext_user_action  (hub_opened, hub_tab_switch)
+ *   - ext_user_action  (hub_opened)
  *   - ext_modal_closed (hub)
  *
  * @version 1.0.0
@@ -182,13 +182,6 @@ export function openHubModal(config = {}) {
     // Update variables
     silentVariableUpdate('ext_hub_active_tab', targetTab);
     silentVariableUpdate('ext_hub_tabs_visited', [...tabsVisited].join(','));
-
-    // Fire tab switch event
-    interactWithAgent('ext_user_action', {
-      action: 'hub_tab_switch',
-      from: fromTab,
-      to: targetTab,
-    });
   }
 
   function saveTabState(tabId) {
