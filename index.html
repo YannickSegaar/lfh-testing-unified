@@ -427,7 +427,7 @@ function loadVoiceflow() {
             page_topic: ''
         };
 
-        // Load all extensions (13 files: 11 unified + feedback v10 + snowfall)
+        // Load all extensions (14 files: 11 unified + feedback v10 + snowfall + hub modal)
         var extensions = [];
         try {
             var [
@@ -443,7 +443,8 @@ function loadVoiceflow() {
                 welcomeCarouselMod,
                 welcomePathMod,
                 leadCaptureMod,
-                snowfallMod
+                snowfallMod,
+                hubModalMod
             ] = await Promise.all([
                 import('./extensions/lfh-feedback-v10.js'),
                 import('./extensions/browser-self-service-v4-widget-unified.js'),
@@ -458,6 +459,7 @@ function loadVoiceflow() {
                 import('./extensions/welcome-path-selector-unified.js'),
                 import('./extensions/lead-capture-form-v4-unified.js'),
                 import('./extensions/snowfall.js'),
+                import('./extensions/lfh-hub-modal.js'),
             ]);
             extensions = [
                 feedbackMod.FeedbackExtension10,
@@ -469,6 +471,7 @@ function loadVoiceflow() {
                 welcomePathMod.LastFrontierWelcomePathUnified,
                 leadCaptureMod.LastFrontierLeadForm_v4_Unified,
                 snowfallMod.SnowfallExtension1,
+                hubModalMod.LastFrontierHub,
             ].filter(Boolean);
             console.log('Extensions loaded:', extensions.map(function(e) { return e.name; }));
         } catch (err) {
