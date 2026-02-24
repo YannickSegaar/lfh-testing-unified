@@ -364,7 +364,7 @@ export function renderToursTab(container, config, savedState) {
         <div class="lfhte-detail-section">
           ${isMobile ? `
             <h3 class="lfhte-section-title lfhte-included-toggle" id="lfhte-included-toggle">
-              <span class="lfhte-toggle-arrow">&#9656;</span> What's Included
+              What's Included <span class="lfhte-toggle-arrow">&#9656;</span>
             </h3>
             <div class="lfhte-included-grid lfhte-included-collapsed">${includedHTML}</div>
           ` : `
@@ -618,7 +618,7 @@ export function renderToursTab(container, config, savedState) {
     if (isMobile) {
       const cardsHTML = rows.map(row => {
         const valuesHTML = tours.map(t =>
-          `<div class="lfhte-compare-card-value"><span class="lfhte-compare-card-tour">${t.name}</span><span class="lfhte-compare-card-data">${row.fn(t)}</span></div>`
+          `<p class="lfhte-compare-card-row"><span class="lfhte-compare-card-tour">${t.name}:</span> ${row.fn(t)}</p>`
         ).join('');
         return `<div class="lfhte-compare-card"><div class="lfhte-compare-card-label">${row.label}</div>${valuesHTML}</div>`;
       }).join('');
@@ -1056,6 +1056,15 @@ export function buildToursStyles() {
 }
 .lfhte-tray-compare-btn:hover { background: #c4221a; }
 
+@media (max-width: 700px) {
+  .lfhte-compare-tray { flex-direction: column; gap: 8px; padding: 10px 16px; }
+  .lfhte-tray-tours { flex-wrap: wrap; gap: 6px; }
+  .lfhte-tray-thumb { flex-shrink: 1; min-width: 0; }
+  .lfhte-tray-thumb span { font-size: 10px; }
+  .lfhte-tray-img { width: 24px; height: 24px; }
+  .lfhte-tray-compare-btn { width: 100%; }
+}
+
 .lfhte-compare { display: flex; flex-direction: column; height: 100%; }
 .lfhte-compare-header {
   display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
@@ -1090,17 +1099,15 @@ export function buildToursStyles() {
   padding: 10px 14px; background: ${LFH_COLORS.textPrimary}; color: #fff;
   font-size: 13px; font-weight: 700;
 }
-.lfhte-compare-card-value {
-  display: flex; flex-direction: column; gap: 2px;
-  padding: 10px 14px; border-bottom: 1px solid ${LFH_COLORS.border};
-  font-size: 12px; color: ${LFH_COLORS.textPrimary};
+.lfhte-compare-card-row {
+  margin: 0; padding: 8px 14px;
+  border-bottom: 1px solid ${LFH_COLORS.border};
+  font-size: 13px; line-height: 1.4;
+  color: ${LFH_COLORS.textPrimary};
 }
-.lfhte-compare-card-value:last-child { border-bottom: none; }
+.lfhte-compare-card-row:last-child { border-bottom: none; }
 .lfhte-compare-card-tour {
-  font-weight: 600; font-size: 11px; color: ${LFH_COLORS.primaryRed};
-}
-.lfhte-compare-card-data {
-  font-size: 13px; font-weight: 500; color: ${LFH_COLORS.textPrimary};
+  color: ${LFH_COLORS.primaryRed}; font-weight: 600; font-size: 12px;
 }
 
 /* Slide Panel */

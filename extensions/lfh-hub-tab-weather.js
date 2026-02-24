@@ -104,7 +104,7 @@ export function renderWeatherTab(container, config, savedState) {
 
   function showFallback() {
     _state.loaded = true;
-    iframe.remove();
+    content.querySelector('iframe')?.remove();
     loading.innerHTML = `
       <div class="lfhwc-fallback">
         <div class="lfhwc-fallback-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="${LFH_COLORS.textSecondary}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h2m4-7l1 1m7-1l-1 1M12 3v2m5 3a5 5 0 0 0-10 0 4 4 0 1 0 0 8h10a3 3 0 1 0-1-5.8"/></svg></div>
