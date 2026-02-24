@@ -6,7 +6,6 @@
  * Lives alongside existing standalone extensions — triggered by ext_hubModal trace.
  *
  * Uses the Unified Event Architecture for all agent interactions:
- *   - ext_user_action  (hub_opened)
  *   - ext_modal_closed (hub)
  *
  * @version 1.0.0
@@ -234,11 +233,6 @@ export function openHubModal(config = {}) {
   // Fire hub opened event
   silentVariableUpdate('ext_last_action', 'hub_opened');
   silentVariableUpdate('ext_hub_active_tab', tab);
-  interactWithAgent('ext_user_action', {
-    action: 'hub_opened',
-    variant,
-    initialTab: tab,
-  });
 
   // ========================================================================
   // TAB BAR EVENT LISTENERS
