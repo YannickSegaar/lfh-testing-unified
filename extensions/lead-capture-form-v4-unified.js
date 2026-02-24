@@ -436,34 +436,38 @@ export const LastFrontierLeadForm_v4_Unified = {
 
 /* ===== YES/NO TOGGLES ===== */
 .lfh-v3-toggle-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   margin-bottom: 14px;
 }
 
 .lfh-v3-toggle-group {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  background: ${colors.infoBox};
+  border-radius: 8px;
+  padding: 10px 14px;
+  border: 1.5px solid ${colors.border};
 }
 
 .lfh-v3-toggle-label {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   color: ${colors.textPrimary};
-  text-transform: uppercase;
-  letter-spacing: 0.4px;
-  margin-bottom: 6px;
+  flex: 1;
+  min-width: 0;
 }
 
 .lfh-v3-toggle-options {
   display: flex;
   gap: 6px;
+  flex-shrink: 0;
 }
 
 .lfh-v3-toggle-btn {
-  flex: 1;
-  padding: 8px;
+  padding: 8px 16px;
   font-size: 12px;
   font-weight: 600;
   text-align: center;
