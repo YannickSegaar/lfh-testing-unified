@@ -98,28 +98,9 @@ export function renderToursTab(container, config, savedState) {
         </select>
       </div>
       <span class="lfhte-results-count" id="lfhte-results-count">${LFH_TOURS.length} tours</span>
-      <button class="lfhte-compare-lodges-link" id="lfhte-compare-lodges-btn">&#9776; Compare Lodges</button>
-      <button class="lfhte-conditions-link" id="lfhte-check-conditions-btn">&#9729; Conditions</button>
     </div>
   `;
   container.appendChild(filterBar);
-
-  // Cross-nav button handlers (switch tab instead of close+reopen)
-  filterBar.querySelector('#lfhte-compare-lodges-btn')?.addEventListener('click', () => {
-    interactWithAgent('ext_user_action', {
-      action: 'tour_compare_lodges',
-      source: 'tour_explorer'
-    });
-    onSwitchTab('lodges');
-  });
-
-  filterBar.querySelector('#lfhte-check-conditions-btn')?.addEventListener('click', () => {
-    interactWithAgent('ext_user_action', {
-      action: 'tour_check_conditions',
-      source: 'tour_explorer'
-    });
-    onSwitchTab('weather');
-  });
 
   // Content Area
   const content = document.createElement('div');
@@ -750,16 +731,6 @@ export function buildToursStyles() {
   font-weight: 600; color: ${LFH_COLORS.textSecondary};
   white-space: nowrap; margin-left: auto;
 }
-.lfhte-compare-lodges-link, .lfhte-conditions-link {
-  padding: 6px 14px; background: ${LFH_COLORS.infoBox};
-  border: 1.5px solid ${LFH_COLORS.border}; border-radius: 20px;
-  font-family: 'Inter', sans-serif; font-size: 11px;
-  font-weight: 600; color: ${LFH_COLORS.textSecondary};
-  cursor: pointer; transition: all 0.2s; white-space: nowrap;
-}
-.lfhte-compare-lodges-link:hover, .lfhte-conditions-link:hover {
-  border-color: ${LFH_COLORS.primaryRed}; color: ${LFH_COLORS.primaryRed};
-}
 .lfhte-lodge-name-link {
   background: none; border: none; padding: 0;
   font-weight: 700; font-size: inherit; font-family: inherit;
@@ -778,7 +749,18 @@ export function buildToursStyles() {
 .lfhte-content::-webkit-scrollbar-thumb { background: ${LFH_COLORS.border}; border-radius: 3px; }
 
 .lfhte-tour-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-@media (max-width: 700px) { .lfhte-tour-grid { grid-template-columns: 1fr; } }
+@media (max-width: 700px) {
+  .lfhte-tour-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .lfhte-card-image { height: 100px; }
+  .lfhte-card-body { padding: 10px; }
+  .lfhte-card-title { font-size: 13px; margin-bottom: 4px; }
+  .lfhte-card-stats { font-size: 10px; margin-bottom: 4px; }
+  .lfhte-card-price { font-size: 12px; margin-bottom: 4px; }
+  .lfhte-card-desc { display: none; }
+  .lfhte-card-actions { flex-direction: column; gap: 4px; }
+  .lfhte-card-actions .lfhte-btn-primary,
+  .lfhte-card-actions .lfhte-btn-outline { padding: 7px 8px; font-size: 10px; }
+}
 
 .lfhte-tour-card {
   border: 1.5px solid ${LFH_COLORS.border}; border-radius: 10px;

@@ -74,16 +74,6 @@ export function renderWeatherTab(container, config, savedState) {
 
   container.appendChild(content);
 
-  // Cross-navigation footer
-  const footerBar = document.createElement('div');
-  footerBar.className = 'lfhwc-footer-bar';
-  footerBar.innerHTML = `
-    <span class="lfhwc-footer-label">Explore more:</span>
-    <button class="lfhwc-footer-btn" data-nav="tours">Browse Tours &rarr;</button>
-    <button class="lfhwc-footer-btn" data-nav="lodges">Compare Lodges &rarr;</button>
-  `;
-  container.appendChild(footerBar);
-
   silentVariableUpdate('ext_last_action', 'weather_conditions_opened');
 
   // --- iframe load / fallback logic ---
@@ -112,10 +102,10 @@ export function renderWeatherTab(container, config, savedState) {
     iframe.remove();
     loading.innerHTML = `
       <div class="lfhwc-fallback">
-        <div class="lfhwc-fallback-icon">&#9729;</div>
-        <p class="lfhwc-fallback-message">This page couldn't be loaded inline due to security settings.</p>
+        <div class="lfhwc-fallback-icon"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="${LFH_COLORS.textSecondary}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h2m4-7l1 1m7-1l-1 1M12 3v2m5 3a5 5 0 0 0-10 0 4 4 0 1 0 0 8h10a3 3 0 1 0-1-5.8"/></svg></div>
+        <p class="lfhwc-fallback-message">View current snow conditions, weather forecasts, and terrain updates for our heliskiing areas.</p>
         <button class="lfhwc-fallback-btn" id="lfhwc-open-external">Open Weather Conditions</button>
-        <p class="lfhwc-fallback-subtext">Opens in a new tab</p>
+        <p class="lfhwc-fallback-subtext">Opens lastfrontierheli.com in a new tab</p>
       </div>
     `;
     loading.style.opacity = '1';
@@ -129,22 +119,6 @@ export function renderWeatherTab(container, config, savedState) {
     });
   }
 
-  // Cross-nav handlers — switch tabs instead of close+reopen
-  footerBar.querySelector('[data-nav="tours"]')?.addEventListener('click', () => {
-    interactWithAgent('ext_user_action', {
-      action: 'weather_browse_tours',
-      source: 'weather_modal',
-    });
-    onSwitchTab('tours');
-  });
-
-  footerBar.querySelector('[data-nav="lodges"]')?.addEventListener('click', () => {
-    interactWithAgent('ext_user_action', {
-      action: 'weather_compare_lodges',
-      source: 'weather_modal',
-    });
-    onSwitchTab('lodges');
-  });
 }
 
 // ============================================================================
@@ -209,39 +183,5 @@ export function buildWeatherStyles() {
   font-size: 12px; color: ${LFH_COLORS.textSecondary};
 }
 
-/* Footer Bar */
-.lfhwc-footer-bar {
-  display: flex; align-items: center; gap: 10px;
-  padding: 10px 20px;
-  background: ${LFH_COLORS.background};
-  border-top: 1px solid ${LFH_COLORS.border};
-  flex-shrink: 0;
-}
-.lfhwc-footer-label {
-  font-family: 'Inter', sans-serif;
-  font-size: 12px; color: ${LFH_COLORS.textSecondary};
-  white-space: nowrap;
-}
-.lfhwc-footer-btn {
-  flex: 1; padding: 10px 16px;
-  font-family: 'Inter', sans-serif;
-  font-size: 13px; font-weight: 600;
-  border-radius: 6px; cursor: pointer;
-  transition: all 0.2s; text-align: center;
-  border: 1px solid ${LFH_COLORS.border};
-  background: ${LFH_COLORS.background};
-  color: ${LFH_COLORS.textPrimary};
-}
-.lfhwc-footer-btn:hover {
-  border-color: ${LFH_COLORS.primaryRed};
-  color: ${LFH_COLORS.primaryRed};
-}
-
-/* Mobile Responsive */
-@media (max-width: 500px) {
-  .lfhwc-footer-bar { flex-wrap: wrap; padding: 10px 16px; }
-  .lfhwc-footer-label { width: 100%; margin-bottom: 4px; }
-  .lfhwc-footer-btn { font-size: 12px; padding: 8px 12px; }
-}
 `;
 }

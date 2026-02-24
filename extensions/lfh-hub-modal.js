@@ -23,9 +23,9 @@ import { renderWeatherTab, getWeatherTabState, buildWeatherStyles } from './lfh-
 // ============================================================================
 
 const TABS = [
-  { id: 'tours', label: 'Tours', icon: '&#9968;' },
-  { id: 'lodges', label: 'Lodges', icon: '&#9962;' },
-  { id: 'weather', label: 'Weather', icon: '&#9729;' },
+  { id: 'tours', label: 'Tours', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21l4-10 4 10"/><path d="M2 21l6-14 4 8"/><path d="M14 15l4-8 4 14"/></svg>' },
+  { id: 'lodges', label: 'Lodges', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21V10l9-7 9 7v11"/><path d="M9 21V14h6v7"/><path d="M3 21h18"/></svg>' },
+  { id: 'weather', label: 'Weather', icon: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h2m4-7l1 1m7-1l-1 1M12 3v2m5 3a5 5 0 0 0-10 0 4 4 0 1 0 0 8h10a3 3 0 1 0-1-5.8"/></svg>' },
 ];
 
 // ============================================================================
@@ -57,7 +57,7 @@ export function openHubModal(config = {}) {
     userId = null,
   } = config;
 
-  const isMobile = device_type === 'mobile';
+  const isMobile = device_type === 'mobile' || window.innerWidth < 768;
   const openedAt = Date.now();
   const abortController = new AbortController();
 
@@ -376,7 +376,8 @@ function buildHubStyles() {
   color: ${LFH_COLORS.primaryRed};
   border-bottom-color: ${LFH_COLORS.primaryRed};
 }
-.lfhub-tab-icon { font-size: 16px; }
+.lfhub-tab-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; }
+.lfhub-tab-icon svg { width: 16px; height: 16px; }
 
 /* Tab Container */
 .lfhub-tab-container {
@@ -401,7 +402,8 @@ function buildHubStyles() {
   .lfhub-header-title { font-size: 14px; letter-spacing: 1px; }
   .lfhub-header-bar { padding: 10px 16px; }
   .lfhub-tab { padding: 10px 8px; font-size: 11px; }
-  .lfhub-tab-icon { font-size: 14px; }
+  .lfhub-tab-icon { width: 14px; height: 14px; }
+  .lfhub-tab-icon svg { width: 14px; height: 14px; }
 }
 `;
 }

@@ -188,10 +188,7 @@ export function renderLodgesTab(container, config, savedState) {
         <div class="lfhlc-overview-cta">
           <div class="lfhlc-cta-buttons">
             <button class="lfhlc-btn-primary lfhlc-help-choose-btn">Help Me Choose the Right Lodge</button>
-            <button class="lfhlc-btn-outline lfhlc-browse-tours-btn">Browse All Tours &rarr;</button>
-            <button class="lfhlc-btn-outline lfhlc-conditions-btn">&#9729; Check Conditions</button>
           </div>
-          <p class="lfhlc-cta-subtext">Our AI will ask about your preferences and recommend the best fit</p>
         </div>
       </div>
     `;
@@ -227,15 +224,6 @@ export function renderLodgesTab(container, config, savedState) {
       onCloseHub();
     });
 
-    // Browse Tours → switch to tours tab
-    content.querySelector('.lfhlc-browse-tours-btn')?.addEventListener('click', () => {
-      onSwitchTab('tours');
-    });
-
-    // Check Conditions → switch to weather tab
-    content.querySelector('.lfhlc-conditions-btn')?.addEventListener('click', () => {
-      onSwitchTab('weather');
-    });
   }
 
   // ========================================================================
@@ -321,9 +309,7 @@ export function renderLodgesTab(container, config, savedState) {
         <div class="lfhlc-terrain-cta">
           <div class="lfhlc-cta-buttons">
             <button class="lfhlc-btn-primary lfhlc-terrain-recommend-btn">Which Terrain Suits My Skill Level?</button>
-            <button class="lfhlc-btn-outline lfhlc-browse-tours-btn">Browse All Tours &rarr;</button>
           </div>
-          <p class="lfhlc-cta-subtext">Our AI will help match you to the right terrain</p>
         </div>
       </div>
     `;
@@ -332,10 +318,6 @@ export function renderLodgesTab(container, config, savedState) {
       interactWithAgent('ext_user_action', { action: 'terrain_recommendation_request', source: 'lodge_compare' });
       onActionTaken();
       onCloseHub();
-    });
-
-    content.querySelector('.lfhlc-browse-tours-btn')?.addEventListener('click', () => {
-      onSwitchTab('tours');
     });
 
     content.querySelectorAll('.lfhlc-layout-btn').forEach(btn => {
@@ -789,10 +771,9 @@ export function buildLodgesStyles() {
 
 /* CTA */
 .lfhlc-overview-cta { text-align: center; padding: 10px 0 20px; }
-.lfhlc-cta-subtext { font-size: 12px; color: ${LFH_COLORS.textSecondary}; margin: 10px 0 0; }
 .lfhlc-cta-buttons { display: flex; gap: 12px; justify-content: center; }
 .lfhlc-cta-buttons .lfhlc-btn-primary,
-.lfhlc-cta-buttons .lfhlc-btn-outline { flex: 1; padding: 14px 20px; font-size: 14px; max-width: 300px; }
+.lfhlc-cta-buttons .lfhlc-btn-outline { flex: none; padding: 14px 32px; font-size: 14px; max-width: 360px; }
 
 /* Terrain Tab */
 .lfhlc-terrain-images { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
@@ -1028,9 +1009,9 @@ export function buildLodgesStyles() {
 @media (max-width: 700px) {
   .lfhlc-overview-cards { grid-template-columns: 1fr; }
   .lfhlc-overview-hero { height: 160px; }
-  .lfhlc-cta-buttons { flex-direction: column; align-items: stretch; }
+  .lfhlc-cta-buttons { flex-direction: column; align-items: center; }
   .lfhlc-cta-buttons .lfhlc-btn-primary,
-  .lfhlc-cta-buttons .lfhlc-btn-outline { width: 100%; }
+  .lfhlc-cta-buttons .lfhlc-btn-outline { width: 100%; max-width: 320px; }
   .lfhlc-comparison-header, .lfhlc-comparison-row { grid-template-columns: 100px 1fr 1fr; }
   .lfhlc-comp-cell { padding: 10px 8px; font-size: 11px; }
   .lfhlc-comp-icon { display: none; }
