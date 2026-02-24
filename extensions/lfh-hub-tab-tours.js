@@ -1094,6 +1094,7 @@ export function buildToursStyles() {
 }
 .lfhte-compare-card {
   border: 1px solid ${LFH_COLORS.border}; border-radius: 8px; overflow: hidden;
+  flex-shrink: 0;
 }
 .lfhte-compare-card-label {
   padding: 10px 14px; background: ${LFH_COLORS.textPrimary}; color: #fff;
