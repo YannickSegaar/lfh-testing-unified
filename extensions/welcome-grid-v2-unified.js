@@ -23,6 +23,9 @@ export const LastFrontierWelcomeGridV2 = {
     trace.payload?.name === 'ext_welcomeGrid_v2',
 
   render: ({ trace, element }) => {
+    const videoMask =
+      'https://www.lastfrontierheli.com/wp-content/themes/lastfrontier/dist/images/videos-img-mask.png';
+
     const cards = [
       {
         id: 'lodges',
@@ -127,6 +130,16 @@ export const LastFrontierWelcomeGridV2 = {
         background-position: center;
       }
 
+      .lfh-grid-card-mask {
+        position: absolute;
+        inset: 0;
+        background-image: url('${videoMask}');
+        background-size: cover;
+        background-position: center;
+        z-index: 1;
+        pointer-events: none;
+      }
+
       .lfh-grid-card-overlay {
         position: absolute;
         bottom: 0;
@@ -135,7 +148,7 @@ export const LastFrontierWelcomeGridV2 = {
         background: linear-gradient(transparent, rgba(0,0,0,0.85));
         padding: 28px 10px 10px;
         color: #fff;
-        z-index: 1;
+        z-index: 2;
       }
 
       .lfh-grid-card-title {
@@ -203,6 +216,7 @@ export const LastFrontierWelcomeGridV2 = {
         <div class="lfh-grid-card-image">
           <div class="lfh-grid-card-bg" style="background-image: url('${card.image}');"
                data-fallback="${card.fallbackGradient}"></div>
+          <div class="lfh-grid-card-mask"></div>
           <div class="lfh-grid-card-overlay">
             <p class="lfh-grid-card-title">${card.title}</p>
             <p class="lfh-grid-card-subtitle">${card.subtitle}</p>
