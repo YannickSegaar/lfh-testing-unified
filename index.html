@@ -427,7 +427,7 @@ function loadVoiceflow() {
             page_topic: ''
         };
 
-        // Load all extensions (14 files: 11 unified + feedback v10 + snowfall + hub modal)
+        // Load all extensions (15 files: 12 unified + feedback v10 + snowfall + hub modal)
         var extensions = [];
         try {
             var [
@@ -442,6 +442,7 @@ function loadVoiceflow() {
                 weatherModalMod,
                 welcomeCarouselMod,
                 welcomePathMod,
+                welcomeGridV2Mod,
                 leadCaptureMod,
                 snowfallMod,
                 hubModalMod
@@ -457,6 +458,7 @@ function loadVoiceflow() {
                 import('./extensions/lfh-weather-conditions-modal-unified.js'),
                 import('./extensions/welcome-carousel-unified.js'),
                 import('./extensions/welcome-path-selector-unified.js'),
+                import('./extensions/welcome-grid-v2-unified.js'),
                 import('./extensions/lead-capture-form-v4-unified.js'),
                 import('./extensions/snowfall.js'),
                 import('./extensions/lfh-hub-modal.js'),
@@ -469,6 +471,7 @@ function loadVoiceflow() {
                 weatherWidgetMod.LFHWeatherConditionsWidgetV2Unified,
                 welcomeCarouselMod.LastFrontierWelcomeCarouselUnified,
                 welcomePathMod.LastFrontierWelcomePathUnified,
+                welcomeGridV2Mod.LastFrontierWelcomeGridV2,
                 leadCaptureMod.LastFrontierLeadForm_v4_Unified,
                 snowfallMod.SnowfallExtension1,
                 hubModalMod.LastFrontierHub,
