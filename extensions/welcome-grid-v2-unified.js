@@ -133,11 +133,18 @@ export const LastFrontierWelcomeGridV2 = {
       .lfh-grid-card-mask {
         position: absolute;
         inset: 0;
+        background: rgba(255,255,255,0.45);
+        z-index: 1;
+        pointer-events: none;
+      }
+      .lfh-grid-card-mask::after {
+        content: '';
+        position: absolute;
+        inset: 0;
         background-image: url('${videoMask}');
         background-size: cover;
         background-position: center;
-        z-index: 1;
-        pointer-events: none;
+        opacity: 0.6;
       }
 
       .lfh-grid-card-overlay {
