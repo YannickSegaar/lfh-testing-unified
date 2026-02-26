@@ -47,6 +47,7 @@ export function renderToursTab(container, config, savedState) {
   const {
     onSwitchTab, onActionTaken, onCloseHub,
     webhookUrl = '', conversationId = null, userId = null,
+    visitorContext = {}, conversationHistory = null, intentSignals = {},
     isMobile = false, tourId = null,
   } = config;
 
@@ -568,6 +569,9 @@ export function renderToursTab(container, config, savedState) {
       variant: 'replace',
       conversationId,
       userId,
+      visitorContext,
+      conversationHistory,
+      intentSignals,
       onSubmitSuccess: (payload) => handleBookingSuccess(tour, payload),
       onBack: () => renderTourDetail(tour),
     });

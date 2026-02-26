@@ -54,6 +54,9 @@ export function openHubModal(config = {}) {
     webhookUrl = '',
     conversationId = null,
     userId = null,
+    visitorContext = {},
+    conversationHistory = null,
+    intentSignals = {},
   } = config;
 
   const isMobile = device_type === 'mobile' || window.innerWidth < 768;
@@ -202,6 +205,9 @@ export function openHubModal(config = {}) {
       webhookUrl,
       conversationId,
       userId,
+      visitorContext,
+      conversationHistory,
+      intentSignals,
       isMobile,
       variant,
       ...options,
@@ -295,6 +301,11 @@ export const LastFrontierHub = {
       lodgeId: payload.lodgeId || null,
       device_type: payload.device_type || 'desktop',
       webhookUrl: payload.webhookUrl || '',
+      conversationId: payload.conversationId || null,
+      userId: payload.userId || null,
+      visitorContext: payload.visitorContext || {},
+      conversationHistory: payload.conversationHistory || null,
+      intentSignals: payload.intentSignals || {},
     });
   },
 };

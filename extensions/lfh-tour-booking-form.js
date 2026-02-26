@@ -1,11 +1,14 @@
 /**
  * Last Frontier Tour Booking Form - Reusable Component
  *
- * Standalone booking request form that renders into any container.
- * Designed for use inside the Tour Explorer modal but decoupled
- * enough for standalone use.
+ * Two-step wizard booking form:
+ *   Step 1: Contact details + experience/qualification
+ *   Step 2: Trip preferences + submit
  *
- * @version 1.0.0
+ * Collects rich context (visitor, conversation, intent signals)
+ * and computes qualification scoring for lead prioritization.
+ *
+ * @version 2.0.0
  * @author Last Frontier Heliskiing / RomAIx
  */
 
@@ -140,6 +143,43 @@ const REQUEST_TYPES = [
 ];
 
 // ============================================================================
+// HEAR ABOUT US OPTIONS
+// ============================================================================
+
+const HEAR_ABOUT_OPTIONS = [
+  { value: '', label: 'Select an option (optional)' },
+  { value: 'google', label: 'Google / Search Engine' },
+  { value: 'social_media', label: 'Social Media' },
+  { value: 'friend_referral', label: 'Friend / Referral' },
+  { value: 'magazine', label: 'Magazine / Publication' },
+  { value: 'travel_agent', label: 'Travel Agent' },
+  { value: 'returning_guest', label: 'Returning Guest' },
+  { value: 'ski_show', label: 'Ski Show / Event' },
+  { value: 'other', label: 'Other' },
+];
+
+// ============================================================================
+// QUALIFICATION SCORING
+// ============================================================================
+
+function computeQualification(requestType, skiDays) {
+  const intentScores = { inquiry: 2, hold: 3, booking: 4 };
+  const experienceScores = { '0-10': 1, '10-30': 2, '30+': 3 };
+
+  const intentScore = intentScores[requestType] || 2;
+  const experienceScore = experienceScores[skiDays] || 1;
+
+  let leadPriority = 'COLD';
+  if (intentScore >= 4) {
+    leadPriority = 'HOT';
+  } else if (intentScore >= 3 || (intentScore >= 2 && experienceScore >= 2)) {
+    leadPriority = 'WARM';
+  }
+
+  return { intentScore, experienceScore, leadPriority };
+}
+
+// ============================================================================
 // BOOKING FORM STYLES
 // ============================================================================
 
@@ -179,6 +219,32 @@ function buildBookingFormStyles() {
   font-size: 13px; font-weight: 700; color: ${LFH_COLORS.textPrimary}; margin: 2px 0 0;
 }
 
+/* Progress Bar */
+.lfhte-bf-progress {
+  display: flex; align-items: center; gap: 0;
+  margin-bottom: 20px; padding: 0 4px;
+}
+.lfhte-bf-progress-step {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; font-weight: 600; color: ${LFH_COLORS.textSecondary};
+  white-space: nowrap;
+}
+.lfhte-bf-progress-step.active { color: ${LFH_COLORS.primaryRed}; }
+.lfhte-bf-progress-step.completed { color: #2E7D32; }
+.lfhte-bf-progress-dot {
+  width: 24px; height: 24px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+  background: ${LFH_COLORS.border};
+}
+.lfhte-bf-progress-step.active .lfhte-bf-progress-dot { background: ${LFH_COLORS.primaryRed}; }
+.lfhte-bf-progress-step.completed .lfhte-bf-progress-dot { background: #2E7D32; }
+.lfhte-bf-progress-line {
+  flex: 1; height: 2px; background: ${LFH_COLORS.border};
+  margin: 0 8px;
+}
+.lfhte-bf-progress-line.completed { background: #2E7D32; }
+
 /* Section Title */
 .lfhte-bf-section-title {
   font-size: 11px; font-weight: 700; color: ${LFH_COLORS.textSecondary};
@@ -194,17 +260,21 @@ function buildBookingFormStyles() {
   color: ${LFH_COLORS.textPrimary}; margin-bottom: 4px;
 }
 .lfhte-bf-field label .lfhte-bf-req { color: ${LFH_COLORS.primaryRed}; }
-.lfhte-bf-input, .lfhte-bf-select {
+.lfhte-bf-input, .lfhte-bf-select, .lfhte-bf-textarea {
   width: 100%; padding: 9px 11px; font-size: 13px;
   font-family: 'Inter', sans-serif; border: 1px solid ${LFH_COLORS.border};
   border-radius: 6px; background: #fff; color: ${LFH_COLORS.textPrimary};
   transition: border-color 0.2s, box-shadow 0.2s; outline: none;
+  box-sizing: border-box;
 }
-.lfhte-bf-input:focus, .lfhte-bf-select:focus {
+.lfhte-bf-textarea {
+  resize: vertical; min-height: 70px; max-height: 150px;
+}
+.lfhte-bf-input:focus, .lfhte-bf-select:focus, .lfhte-bf-textarea:focus {
   border-color: ${LFH_COLORS.primaryRed};
   box-shadow: 0 0 0 2px rgba(230, 43, 30, 0.08);
 }
-.lfhte-bf-input::placeholder { color: #aaa; }
+.lfhte-bf-input::placeholder, .lfhte-bf-textarea::placeholder { color: #aaa; }
 .lfhte-bf-input.lfhte-bf-error, .lfhte-bf-select.lfhte-bf-error {
   border-color: ${LFH_COLORS.primaryRed};
 }
@@ -233,6 +303,44 @@ function buildBookingFormStyles() {
 .lfhte-bf-country-list::-webkit-scrollbar { width: 5px; }
 .lfhte-bf-country-list::-webkit-scrollbar-thumb {
   background: ${LFH_COLORS.border}; border-radius: 3px;
+}
+
+/* Experience Cards */
+.lfhte-bf-exp-cards { display: flex; gap: 8px; margin-bottom: 12px; }
+.lfhte-bf-exp-card {
+  flex: 1; padding: 10px 8px; border: 1.5px solid ${LFH_COLORS.border};
+  border-radius: 8px; text-align: center; cursor: pointer;
+  transition: all 0.2s; background: #fff; font-size: 12px; font-weight: 600;
+  color: ${LFH_COLORS.textPrimary};
+}
+.lfhte-bf-exp-card:hover {
+  border-color: ${LFH_COLORS.primaryRed};
+  background: ${LFH_COLORS.selectedTint};
+}
+.lfhte-bf-exp-card.selected {
+  border-color: ${LFH_COLORS.primaryRed};
+  background: ${LFH_COLORS.selectedTint};
+  box-shadow: 0 0 0 1px ${LFH_COLORS.primaryRed};
+  color: ${LFH_COLORS.primaryRed};
+}
+.lfhte-bf-exp-card-label { font-size: 13px; font-weight: 700; }
+.lfhte-bf-exp-card-sub { font-size: 10px; color: ${LFH_COLORS.textSecondary}; margin-top: 2px; }
+
+/* Toggle Pills */
+.lfhte-bf-toggle-row { display: flex; gap: 8px; margin-bottom: 12px; }
+.lfhte-bf-toggle-pill {
+  flex: 1; padding: 9px 12px; border: 1.5px solid ${LFH_COLORS.border};
+  border-radius: 20px; text-align: center; cursor: pointer;
+  transition: all 0.2s; background: #fff; font-size: 12px; font-weight: 600;
+  color: ${LFH_COLORS.textPrimary};
+}
+.lfhte-bf-toggle-pill:hover {
+  border-color: ${LFH_COLORS.primaryRed};
+}
+.lfhte-bf-toggle-pill.selected {
+  border-color: ${LFH_COLORS.primaryRed};
+  background: ${LFH_COLORS.primaryRed};
+  color: #fff;
 }
 
 /* Custom dates message */
@@ -310,19 +418,31 @@ function buildBookingFormStyles() {
 }
 .lfhte-bf-consent-error.visible { display: block; }
 
-/* Submit Button */
-.lfhte-bf-submit {
-  width: 100%; padding: 13px 20px;
+/* Navigation Buttons */
+.lfhte-bf-nav-row {
+  display: flex; gap: 10px; margin-top: 8px;
+}
+.lfhte-bf-btn-back {
+  padding: 13px 20px; background: #fff; color: ${LFH_COLORS.textPrimary};
+  border: 1.5px solid ${LFH_COLORS.border}; border-radius: 6px;
+  font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s;
+}
+.lfhte-bf-btn-back:hover {
+  border-color: ${LFH_COLORS.textSecondary}; background: ${LFH_COLORS.infoBox};
+}
+.lfhte-bf-btn-next, .lfhte-bf-submit {
+  flex: 1; padding: 13px 20px;
   background: ${LFH_COLORS.primaryRed}; color: #fff;
   border: none; border-radius: 6px; font-family: 'Inter', sans-serif;
   font-size: 13px; font-weight: 700; cursor: pointer;
   text-transform: uppercase; letter-spacing: 0.5px;
   transition: all 0.2s; position: relative;
 }
-.lfhte-bf-submit:hover:not(:disabled) {
+.lfhte-bf-btn-next:hover:not(:disabled), .lfhte-bf-submit:hover:not(:disabled) {
   background: #c4221a; transform: translateY(-1px);
 }
-.lfhte-bf-submit:disabled { background: #ccc; cursor: not-allowed; }
+.lfhte-bf-btn-next:disabled, .lfhte-bf-submit:disabled { background: #ccc; cursor: not-allowed; }
 .lfhte-bf-submit.loading { color: transparent; }
 .lfhte-bf-submit.loading::after {
   content: ''; position: absolute; top: 50%; left: 50%;
@@ -375,9 +495,11 @@ function buildBookingFormStyles() {
 @media (max-width: 500px) {
   .lfhte-bf-row { flex-direction: column; gap: 0; }
   .lfhte-bf-request-types { flex-direction: column; }
+  .lfhte-bf-exp-cards { flex-direction: column; }
   .lfhte-bf-tour-card { flex-direction: column; text-align: center; }
   .lfhte-bf-tour-thumb { width: 100%; height: 80px; }
   .lfhte-bf-container { padding: 14px; }
+  .lfhte-bf-progress-step span:not(.lfhte-bf-progress-dot) { display: none; }
 }
 `;
 }
@@ -387,7 +509,7 @@ function buildBookingFormStyles() {
 // ============================================================================
 
 /**
- * Renders a booking request form into the given container.
+ * Renders a two-step booking request wizard into the given container.
  *
  * @param {HTMLElement} container - DOM element to render into
  * @param {Object} options
@@ -398,6 +520,9 @@ function buildBookingFormStyles() {
  * @param {Function} [options.onBack] - Callback to return to tour detail
  * @param {string|null} [options.conversationId] - VoiceFlow conversation ID
  * @param {string|null} [options.userId] - VoiceFlow user ID
+ * @param {Object} [options.visitorContext] - Visitor context from trace
+ * @param {string|null} [options.conversationHistory] - Conversation history
+ * @param {Object} [options.intentSignals] - Intent signals from AI agent
  */
 export function renderBookingForm(container, options = {}) {
   const {
@@ -407,6 +532,9 @@ export function renderBookingForm(container, options = {}) {
     onBack = () => {},
     conversationId = null,
     userId = null,
+    visitorContext = {},
+    conversationHistory = null,
+    intentSignals = {},
   } = options;
 
   if (!tour) {
@@ -415,9 +543,13 @@ export function renderBookingForm(container, options = {}) {
   }
 
   // State
+  let currentStep = 1;
   let selectedRequestType = null;
   let selectedCountry = '';
   let groupSize = 4;
+  let selectedSkiDays = '';
+  let selectedCatSkied = '';
+  let selectedHeliSkied = '';
 
   // Get tour dates for this tour type
   const tourDates = TOUR_DATES[tour.id] || null;
@@ -439,226 +571,624 @@ export function renderBookingForm(container, options = {}) {
   const formWrap = document.createElement('div');
   formWrap.className = 'lfhte-bf-container';
 
-  // Tour date options
-  let dateFieldHTML;
-  if (isPrivate) {
-    dateFieldHTML = `
-      <div class="lfhte-bf-field">
-        <label>Tour Dates</label>
-        <div class="lfhte-bf-custom-dates">Contact us for custom dates tailored to your group</div>
-      </div>
-    `;
-  } else if (tourDates && tourDates.length > 0) {
-    const dateOpts = tourDates.map(d => `<option value="${d.value}">${d.label}</option>`).join('');
-    dateFieldHTML = `
-      <div class="lfhte-bf-field">
-        <label for="lfhte-bf-date">Preferred Date</label>
-        <select id="lfhte-bf-date" class="lfhte-bf-select">
-          <option value="">Select a date (optional)</option>
-          ${dateOpts}
-        </select>
-      </div>
-    `;
-  } else {
-    dateFieldHTML = `
-      <div class="lfhte-bf-field">
-        <label for="lfhte-bf-date">Preferred Date</label>
-        <select id="lfhte-bf-date" class="lfhte-bf-select">
-          <option value="">No dates available</option>
-        </select>
-      </div>
-    `;
-  }
-
-  // Request type cards
-  const rtCardsHTML = REQUEST_TYPES.map(rt => `
-    <div class="lfhte-bf-rt-card" data-rt="${rt.id}">
-      <div class="lfhte-bf-rt-icon">${rt.icon}</div>
-      <div class="lfhte-bf-rt-label">${rt.label}</div>
-      <div class="lfhte-bf-rt-desc">${rt.description}</div>
-    </div>
-  `).join('');
-
-  formWrap.innerHTML = `
-    <!-- Tour Summary -->
-    <div class="lfhte-bf-tour-card">
-      <div class="lfhte-bf-tour-thumb" style="background-image:url('${tour.thumbnailImage}')"></div>
-      <div class="lfhte-bf-tour-info">
-        <p class="lfhte-bf-tour-name">${tour.name}</p>
-        <p class="lfhte-bf-tour-meta">${tour.duration} &middot; ${lodgesDisplay} &middot; ${tour.verticalGuarantee} vertical</p>
-        <p class="lfhte-bf-tour-price">From $${tour.priceFrom.toLocaleString()} CAD</p>
-      </div>
-    </div>
-
-    <form id="lfhte-bf-form" novalidate>
-      <!-- Contact Details -->
-      <div class="lfhte-bf-section-title">Your Details</div>
-      <div class="lfhte-bf-row">
-        <div class="lfhte-bf-field">
-          <label for="lfhte-bf-fname">First Name <span class="lfhte-bf-req">*</span></label>
-          <input type="text" id="lfhte-bf-fname" class="lfhte-bf-input" placeholder="John" autocomplete="given-name" required>
-          <div class="lfhte-bf-error-msg">Please enter your first name</div>
-        </div>
-        <div class="lfhte-bf-field">
-          <label for="lfhte-bf-lname">Last Name <span class="lfhte-bf-req">*</span></label>
-          <input type="text" id="lfhte-bf-lname" class="lfhte-bf-input" placeholder="Smith" autocomplete="family-name" required>
-          <div class="lfhte-bf-error-msg">Please enter your last name</div>
-        </div>
-      </div>
-
-      <div class="lfhte-bf-field" style="margin-bottom:12px">
-        <label for="lfhte-bf-email">Email <span class="lfhte-bf-req">*</span></label>
-        <input type="email" id="lfhte-bf-email" class="lfhte-bf-input" placeholder="john@example.com" autocomplete="email" required>
-        <div class="lfhte-bf-error-msg">Please enter a valid email address</div>
-      </div>
-
-      <div class="lfhte-bf-row">
-        <div class="lfhte-bf-field">
-          <label for="lfhte-bf-phone">Phone <span class="lfhte-bf-req">*</span></label>
-          <input type="tel" id="lfhte-bf-phone" class="lfhte-bf-input" placeholder="+1 (555) 123-4567" autocomplete="tel" required>
-          <div class="lfhte-bf-error-msg">Please enter your phone number</div>
-        </div>
-        <div class="lfhte-bf-field">
-          <label for="lfhte-bf-country">Country <span class="lfhte-bf-req">*</span></label>
-          <div class="lfhte-bf-country-wrap">
-            <input type="text" id="lfhte-bf-country" class="lfhte-bf-input" placeholder="Start typing..." autocomplete="off" required>
-            <div class="lfhte-bf-country-list" id="lfhte-bf-country-list"></div>
-          </div>
-          <div class="lfhte-bf-error-msg">Please select your country</div>
-        </div>
-      </div>
-
-      <!-- Trip Preferences -->
-      <div class="lfhte-bf-section-title">Trip Preferences</div>
-
-      ${dateFieldHTML}
-
-      <div class="lfhte-bf-field" style="margin:12px 0 16px">
-        <label>Group Size: <span id="lfhte-bf-group-val" style="color:${LFH_COLORS.primaryRed};font-weight:700">4</span></label>
-        <div class="lfhte-bf-slider-wrap">
-          <span style="font-size:11px;color:${LFH_COLORS.textSecondary}">1</span>
-          <input type="range" id="lfhte-bf-group" class="lfhte-bf-slider" min="1" max="12" value="4">
-          <span style="font-size:11px;color:${LFH_COLORS.textSecondary}">12</span>
-        </div>
-      </div>
-
-      <!-- Request Type -->
-      <div class="lfhte-bf-section-title">What would you like to do? <span class="lfhte-bf-req">*</span></div>
-      <div class="lfhte-bf-request-types" id="lfhte-bf-rt-cards">${rtCardsHTML}</div>
-      <div class="lfhte-bf-error-msg" id="lfhte-bf-rt-error">Please select a request type</div>
-
-      <!-- Consent -->
-      <div class="lfhte-bf-consent">
-        <input type="checkbox" id="lfhte-bf-consent">
-        <label for="lfhte-bf-consent">
-          I agree to receive communications from Last Frontier Heliskiing.
-          View our <a href="https://lastfrontierheli.com/privacy" target="_blank" rel="noopener">Privacy Policy</a>.
-        </label>
-      </div>
-      <div class="lfhte-bf-consent-error" id="lfhte-bf-consent-error">Please accept the privacy policy</div>
-
-      <!-- Submit -->
-      <button type="submit" class="lfhte-bf-submit" id="lfhte-bf-submit">Send Request</button>
-    </form>
-  `;
-
   container.innerHTML = '';
   container.appendChild(styleEl);
   container.appendChild(formWrap);
 
-  // --- Interactivity ---
+  // --- Render Step 1 ---
+  function renderStep1() {
+    currentStep = 1;
 
-  const form = formWrap.querySelector('#lfhte-bf-form');
-  const submitBtn = formWrap.querySelector('#lfhte-bf-submit');
+    // Hear about us options
+    const hearAboutHTML = HEAR_ABOUT_OPTIONS.map(o =>
+      `<option value="${o.value}">${o.label}</option>`
+    ).join('');
 
-  // Country searchable dropdown
-  const countryInput = formWrap.querySelector('#lfhte-bf-country');
-  const countryList = formWrap.querySelector('#lfhte-bf-country-list');
-  let highlightedIdx = -1;
+    formWrap.innerHTML = `
+      <!-- Tour Summary -->
+      <div class="lfhte-bf-tour-card">
+        <div class="lfhte-bf-tour-thumb" style="background-image:url('${tour.thumbnailImage}')"></div>
+        <div class="lfhte-bf-tour-info">
+          <p class="lfhte-bf-tour-name">${tour.name}</p>
+          <p class="lfhte-bf-tour-meta">${tour.duration} &middot; ${lodgesDisplay} &middot; ${tour.verticalGuarantee} vertical</p>
+          <p class="lfhte-bf-tour-price">From $${tour.priceFrom.toLocaleString()} CAD</p>
+        </div>
+      </div>
 
-  function renderCountryList(filter = '') {
-    const filtered = filter
-      ? COUNTRIES.filter(c => c.toLowerCase().includes(filter.toLowerCase()))
-      : COUNTRIES;
-    highlightedIdx = -1;
-    if (filtered.length === 0) {
-      countryList.innerHTML = '<div style="padding:8px 11px;color:#999;font-size:12px;">No matches</div>';
+      <!-- Progress Bar -->
+      <div class="lfhte-bf-progress">
+        <div class="lfhte-bf-progress-step active">
+          <span class="lfhte-bf-progress-dot">1</span>
+          <span>Your Details</span>
+        </div>
+        <div class="lfhte-bf-progress-line"></div>
+        <div class="lfhte-bf-progress-step">
+          <span class="lfhte-bf-progress-dot">2</span>
+          <span>Trip Preferences</span>
+        </div>
+      </div>
+
+      <form id="lfhte-bf-form-step1" novalidate>
+        <!-- Contact Details -->
+        <div class="lfhte-bf-section-title">Contact Information</div>
+        <div class="lfhte-bf-row">
+          <div class="lfhte-bf-field">
+            <label for="lfhte-bf-fname">First Name <span class="lfhte-bf-req">*</span></label>
+            <input type="text" id="lfhte-bf-fname" class="lfhte-bf-input" placeholder="John" autocomplete="given-name" required>
+            <div class="lfhte-bf-error-msg">Please enter your first name</div>
+          </div>
+          <div class="lfhte-bf-field">
+            <label for="lfhte-bf-lname">Last Name <span class="lfhte-bf-req">*</span></label>
+            <input type="text" id="lfhte-bf-lname" class="lfhte-bf-input" placeholder="Smith" autocomplete="family-name" required>
+            <div class="lfhte-bf-error-msg">Please enter your last name</div>
+          </div>
+        </div>
+
+        <div class="lfhte-bf-field" style="margin-bottom:12px">
+          <label for="lfhte-bf-email">Email <span class="lfhte-bf-req">*</span></label>
+          <input type="email" id="lfhte-bf-email" class="lfhte-bf-input" placeholder="john@example.com" autocomplete="email" required>
+          <div class="lfhte-bf-error-msg">Please enter a valid email address</div>
+        </div>
+
+        <div class="lfhte-bf-row">
+          <div class="lfhte-bf-field">
+            <label for="lfhte-bf-phone">Phone <span class="lfhte-bf-req">*</span></label>
+            <input type="tel" id="lfhte-bf-phone" class="lfhte-bf-input" placeholder="+1 (555) 123-4567" autocomplete="tel" required>
+            <div class="lfhte-bf-error-msg">Please enter your phone number</div>
+          </div>
+          <div class="lfhte-bf-field">
+            <label for="lfhte-bf-country">Country <span class="lfhte-bf-req">*</span></label>
+            <div class="lfhte-bf-country-wrap">
+              <input type="text" id="lfhte-bf-country" class="lfhte-bf-input" placeholder="Start typing..." autocomplete="off" required>
+              <div class="lfhte-bf-country-list" id="lfhte-bf-country-list"></div>
+            </div>
+            <div class="lfhte-bf-error-msg">Please select your country</div>
+          </div>
+        </div>
+
+        <div class="lfhte-bf-field" style="margin-bottom:12px">
+          <label for="lfhte-bf-hear">How did you hear about us?</label>
+          <select id="lfhte-bf-hear" class="lfhte-bf-select">${hearAboutHTML}</select>
+        </div>
+
+        <!-- Experience -->
+        <div class="lfhte-bf-section-title">Your Experience</div>
+
+        <div class="lfhte-bf-field" style="margin-bottom:4px">
+          <label>Skiing days per year</label>
+        </div>
+        <div class="lfhte-bf-exp-cards" id="lfhte-bf-ski-days">
+          <div class="lfhte-bf-exp-card" data-value="0-10">
+            <div class="lfhte-bf-exp-card-label">0–10</div>
+            <div class="lfhte-bf-exp-card-sub">days/yr</div>
+          </div>
+          <div class="lfhte-bf-exp-card" data-value="10-30">
+            <div class="lfhte-bf-exp-card-label">10–30</div>
+            <div class="lfhte-bf-exp-card-sub">days/yr</div>
+          </div>
+          <div class="lfhte-bf-exp-card" data-value="30+">
+            <div class="lfhte-bf-exp-card-label">30+</div>
+            <div class="lfhte-bf-exp-card-sub">days/yr</div>
+          </div>
+        </div>
+
+        <div class="lfhte-bf-field" style="margin-bottom:4px">
+          <label>Cat skied before?</label>
+        </div>
+        <div class="lfhte-bf-toggle-row" id="lfhte-bf-cat-skied">
+          <div class="lfhte-bf-toggle-pill" data-value="yes">Yes</div>
+          <div class="lfhte-bf-toggle-pill" data-value="no">No</div>
+        </div>
+
+        <div class="lfhte-bf-field" style="margin-bottom:4px">
+          <label>Heli skied before?</label>
+        </div>
+        <div class="lfhte-bf-toggle-row" id="lfhte-bf-heli-skied">
+          <div class="lfhte-bf-toggle-pill" data-value="yes">Yes</div>
+          <div class="lfhte-bf-toggle-pill" data-value="no">No</div>
+        </div>
+
+        <!-- Next Button -->
+        <div class="lfhte-bf-nav-row">
+          <button type="submit" class="lfhte-bf-btn-next">Continue to Trip Details &rarr;</button>
+        </div>
+      </form>
+    `;
+
+    // --- Step 1 Interactivity ---
+    wireCountryDropdown();
+    wireExperienceCards();
+    wireStep1Validation();
+  }
+
+  // --- Render Step 2 ---
+  function renderStep2() {
+    currentStep = 2;
+
+    // Tour date options
+    let dateFieldHTML;
+    if (isPrivate) {
+      dateFieldHTML = `
+        <div class="lfhte-bf-field">
+          <label>Tour Dates</label>
+          <div class="lfhte-bf-custom-dates">Contact us for custom dates tailored to your group</div>
+        </div>
+      `;
+    } else if (tourDates && tourDates.length > 0) {
+      const dateOpts = tourDates.map(d => `<option value="${d.value}">${d.label}</option>`).join('');
+      dateFieldHTML = `
+        <div class="lfhte-bf-field">
+          <label for="lfhte-bf-date">Preferred Date</label>
+          <select id="lfhte-bf-date" class="lfhte-bf-select">
+            <option value="">Select a date (optional)</option>
+            ${dateOpts}
+          </select>
+        </div>
+      `;
     } else {
-      countryList.innerHTML = filtered.map((c, i) =>
-        `<div class="lfhte-bf-country-item" data-country="${c}" data-idx="${i}">${c}</div>`
-      ).join('');
+      dateFieldHTML = `
+        <div class="lfhte-bf-field">
+          <label for="lfhte-bf-date">Preferred Date</label>
+          <select id="lfhte-bf-date" class="lfhte-bf-select">
+            <option value="">No dates available</option>
+          </select>
+        </div>
+      `;
     }
-    countryList.classList.add('open');
+
+    // Request type cards
+    const rtCardsHTML = REQUEST_TYPES.map(rt => `
+      <div class="lfhte-bf-rt-card${selectedRequestType === rt.id ? ' selected' : ''}" data-rt="${rt.id}">
+        <div class="lfhte-bf-rt-icon">${rt.icon}</div>
+        <div class="lfhte-bf-rt-label">${rt.label}</div>
+        <div class="lfhte-bf-rt-desc">${rt.description}</div>
+      </div>
+    `).join('');
+
+    formWrap.innerHTML = `
+      <!-- Tour Summary -->
+      <div class="lfhte-bf-tour-card">
+        <div class="lfhte-bf-tour-thumb" style="background-image:url('${tour.thumbnailImage}')"></div>
+        <div class="lfhte-bf-tour-info">
+          <p class="lfhte-bf-tour-name">${tour.name}</p>
+          <p class="lfhte-bf-tour-meta">${tour.duration} &middot; ${lodgesDisplay} &middot; ${tour.verticalGuarantee} vertical</p>
+          <p class="lfhte-bf-tour-price">From $${tour.priceFrom.toLocaleString()} CAD</p>
+        </div>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="lfhte-bf-progress">
+        <div class="lfhte-bf-progress-step completed">
+          <span class="lfhte-bf-progress-dot">&check;</span>
+          <span>Your Details</span>
+        </div>
+        <div class="lfhte-bf-progress-line completed"></div>
+        <div class="lfhte-bf-progress-step active">
+          <span class="lfhte-bf-progress-dot">2</span>
+          <span>Trip Preferences</span>
+        </div>
+      </div>
+
+      <form id="lfhte-bf-form-step2" novalidate>
+        <!-- Trip Preferences -->
+        <div class="lfhte-bf-section-title">Trip Preferences</div>
+
+        ${dateFieldHTML}
+
+        <div class="lfhte-bf-field" style="margin:12px 0 16px">
+          <label>Group Size: <span id="lfhte-bf-group-val" style="color:${LFH_COLORS.primaryRed};font-weight:700">${groupSize}</span></label>
+          <div class="lfhte-bf-slider-wrap">
+            <span style="font-size:11px;color:${LFH_COLORS.textSecondary}">1</span>
+            <input type="range" id="lfhte-bf-group" class="lfhte-bf-slider" min="1" max="12" value="${groupSize}">
+            <span style="font-size:11px;color:${LFH_COLORS.textSecondary}">12</span>
+          </div>
+        </div>
+
+        <!-- Request Type -->
+        <div class="lfhte-bf-section-title">What would you like to do? <span class="lfhte-bf-req">*</span></div>
+        <div class="lfhte-bf-request-types" id="lfhte-bf-rt-cards">${rtCardsHTML}</div>
+        <div class="lfhte-bf-error-msg" id="lfhte-bf-rt-error">Please select a request type</div>
+
+        <!-- Additional Notes -->
+        <div class="lfhte-bf-field" style="margin-top:12px">
+          <label for="lfhte-bf-notes">Additional Notes</label>
+          <textarea id="lfhte-bf-notes" class="lfhte-bf-textarea" placeholder="Any special requirements, questions, or details you'd like to share..."></textarea>
+        </div>
+
+        <!-- Consent -->
+        <div class="lfhte-bf-consent">
+          <input type="checkbox" id="lfhte-bf-consent">
+          <label for="lfhte-bf-consent">
+            I agree to receive communications from Last Frontier Heliskiing.
+            View our <a href="https://lastfrontierheli.com/privacy" target="_blank" rel="noopener">Privacy Policy</a>.
+          </label>
+        </div>
+        <div class="lfhte-bf-consent-error" id="lfhte-bf-consent-error">Please accept the privacy policy</div>
+
+        <!-- Navigation -->
+        <div class="lfhte-bf-nav-row">
+          <button type="button" class="lfhte-bf-btn-back" id="lfhte-bf-back">&larr; Back</button>
+          <button type="submit" class="lfhte-bf-submit" id="lfhte-bf-submit">Send Request</button>
+        </div>
+      </form>
+    `;
+
+    // --- Step 2 Interactivity ---
+    wireStep2Interactions();
   }
 
-  countryInput.addEventListener('focus', () => renderCountryList(countryInput.value));
-  countryInput.addEventListener('input', () => {
-    selectedCountry = '';
-    renderCountryList(countryInput.value);
-  });
+  // ======================================================================
+  // SHARED: Country Dropdown
+  // ======================================================================
 
-  countryList.addEventListener('click', (e) => {
-    const item = e.target.closest('.lfhte-bf-country-item');
-    if (item) {
-      selectedCountry = item.dataset.country;
+  function wireCountryDropdown() {
+    const countryInput = formWrap.querySelector('#lfhte-bf-country');
+    const countryList = formWrap.querySelector('#lfhte-bf-country-list');
+    if (!countryInput || !countryList) return;
+
+    let highlightedIdx = -1;
+
+    // Restore if previously selected
+    if (selectedCountry) {
       countryInput.value = selectedCountry;
-      countryList.classList.remove('open');
-      countryInput.classList.remove('lfhte-bf-error');
-      const errEl = countryInput.closest('.lfhte-bf-field')?.querySelector('.lfhte-bf-error-msg');
-      if (errEl) errEl.classList.remove('visible');
     }
-  });
 
-  countryInput.addEventListener('keydown', (e) => {
-    const items = countryList.querySelectorAll('.lfhte-bf-country-item');
-    if (e.key === 'ArrowDown') {
-      e.preventDefault();
-      highlightedIdx = Math.min(highlightedIdx + 1, items.length - 1);
-      items.forEach((it, i) => it.classList.toggle('highlighted', i === highlightedIdx));
-      items[highlightedIdx]?.scrollIntoView({ block: 'nearest' });
-    } else if (e.key === 'ArrowUp') {
-      e.preventDefault();
-      highlightedIdx = Math.max(highlightedIdx - 1, 0);
-      items.forEach((it, i) => it.classList.toggle('highlighted', i === highlightedIdx));
-      items[highlightedIdx]?.scrollIntoView({ block: 'nearest' });
-    } else if (e.key === 'Enter' && highlightedIdx >= 0 && items[highlightedIdx]) {
-      e.preventDefault();
-      selectedCountry = items[highlightedIdx].dataset.country;
-      countryInput.value = selectedCountry;
-      countryList.classList.remove('open');
+    function renderCountryList(filter = '') {
+      const filtered = filter
+        ? COUNTRIES.filter(c => c.toLowerCase().includes(filter.toLowerCase()))
+        : COUNTRIES;
+      highlightedIdx = -1;
+      if (filtered.length === 0) {
+        countryList.innerHTML = '<div style="padding:8px 11px;color:#999;font-size:12px;">No matches</div>';
+      } else {
+        countryList.innerHTML = filtered.map((c, i) =>
+          `<div class="lfhte-bf-country-item" data-country="${c}" data-idx="${i}">${c}</div>`
+        ).join('');
+      }
+      countryList.classList.add('open');
     }
-  });
 
-  // Close country list on outside click
-  document.addEventListener('click', (e) => {
-    if (!countryInput.contains(e.target) && !countryList.contains(e.target)) {
-      countryList.classList.remove('open');
-    }
-  });
+    countryInput.addEventListener('focus', () => renderCountryList(countryInput.value));
+    countryInput.addEventListener('input', () => {
+      selectedCountry = '';
+      renderCountryList(countryInput.value);
+    });
 
-  // Group size slider
-  const groupSlider = formWrap.querySelector('#lfhte-bf-group');
-  const groupVal = formWrap.querySelector('#lfhte-bf-group-val');
-  if (groupSlider) {
-    groupSlider.addEventListener('input', () => {
-      groupSize = parseInt(groupSlider.value);
-      groupVal.textContent = groupSize;
+    countryList.addEventListener('click', (e) => {
+      const item = e.target.closest('.lfhte-bf-country-item');
+      if (item) {
+        selectedCountry = item.dataset.country;
+        countryInput.value = selectedCountry;
+        countryList.classList.remove('open');
+        countryInput.classList.remove('lfhte-bf-error');
+        const errEl = countryInput.closest('.lfhte-bf-field')?.querySelector('.lfhte-bf-error-msg');
+        if (errEl) errEl.classList.remove('visible');
+      }
+    });
+
+    countryInput.addEventListener('keydown', (e) => {
+      const items = countryList.querySelectorAll('.lfhte-bf-country-item');
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        highlightedIdx = Math.min(highlightedIdx + 1, items.length - 1);
+        items.forEach((it, i) => it.classList.toggle('highlighted', i === highlightedIdx));
+        items[highlightedIdx]?.scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        highlightedIdx = Math.max(highlightedIdx - 1, 0);
+        items.forEach((it, i) => it.classList.toggle('highlighted', i === highlightedIdx));
+        items[highlightedIdx]?.scrollIntoView({ block: 'nearest' });
+      } else if (e.key === 'Enter' && highlightedIdx >= 0 && items[highlightedIdx]) {
+        e.preventDefault();
+        selectedCountry = items[highlightedIdx].dataset.country;
+        countryInput.value = selectedCountry;
+        countryList.classList.remove('open');
+      }
+    });
+
+    // Close country list on outside click
+    document.addEventListener('click', (e) => {
+      if (!countryInput.contains(e.target) && !countryList.contains(e.target)) {
+        countryList.classList.remove('open');
+      }
     });
   }
 
-  // Request type selection
-  const rtCards = formWrap.querySelectorAll('.lfhte-bf-rt-card');
-  const rtError = formWrap.querySelector('#lfhte-bf-rt-error');
-  rtCards.forEach(card => {
-    card.addEventListener('click', () => {
-      rtCards.forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-      selectedRequestType = card.dataset.rt;
-      if (rtError) rtError.classList.remove('visible');
-    });
-  });
+  // ======================================================================
+  // STEP 1: Experience Cards + Toggle Pills
+  // ======================================================================
 
-  // Field validation
+  function wireExperienceCards() {
+    // Ski days cards
+    const skiDaysContainer = formWrap.querySelector('#lfhte-bf-ski-days');
+    if (skiDaysContainer) {
+      const cards = skiDaysContainer.querySelectorAll('.lfhte-bf-exp-card');
+      // Restore selection
+      if (selectedSkiDays) {
+        cards.forEach(c => c.classList.toggle('selected', c.dataset.value === selectedSkiDays));
+      }
+      cards.forEach(card => {
+        card.addEventListener('click', () => {
+          cards.forEach(c => c.classList.remove('selected'));
+          card.classList.add('selected');
+          selectedSkiDays = card.dataset.value;
+        });
+      });
+    }
+
+    // Cat skied toggle
+    wireToggle('#lfhte-bf-cat-skied', selectedCatSkied, (val) => { selectedCatSkied = val; });
+
+    // Heli skied toggle
+    wireToggle('#lfhte-bf-heli-skied', selectedHeliSkied, (val) => { selectedHeliSkied = val; });
+  }
+
+  function wireToggle(selector, currentVal, setter) {
+    const container = formWrap.querySelector(selector);
+    if (!container) return;
+    const pills = container.querySelectorAll('.lfhte-bf-toggle-pill');
+    // Restore selection
+    if (currentVal) {
+      pills.forEach(p => p.classList.toggle('selected', p.dataset.value === currentVal));
+    }
+    pills.forEach(pill => {
+      pill.addEventListener('click', () => {
+        pills.forEach(p => p.classList.remove('selected'));
+        pill.classList.add('selected');
+        setter(pill.dataset.value);
+      });
+    });
+  }
+
+  // ======================================================================
+  // STEP 1: Validation + Submit
+  // ======================================================================
+
+  // Cached step 1 values for round-trip
+  let step1Values = {};
+
+  function wireStep1Validation() {
+    const form = formWrap.querySelector('#lfhte-bf-form-step1');
+    if (!form) return;
+
+    // Restore values if going back from step 2
+    if (step1Values.firstName) {
+      const f = formWrap.querySelector('#lfhte-bf-fname');
+      const l = formWrap.querySelector('#lfhte-bf-lname');
+      const e = formWrap.querySelector('#lfhte-bf-email');
+      const p = formWrap.querySelector('#lfhte-bf-phone');
+      const h = formWrap.querySelector('#lfhte-bf-hear');
+      if (f) f.value = step1Values.firstName;
+      if (l) l.value = step1Values.lastName;
+      if (e) e.value = step1Values.email;
+      if (p) p.value = step1Values.phone;
+      if (h) h.value = step1Values.hearAboutUs || '';
+    }
+
+    // Blur validation for required fields
+    formWrap.querySelectorAll('.lfhte-bf-input[required]').forEach(input => {
+      input.addEventListener('blur', () => validateField(input));
+    });
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      let allValid = true;
+      formWrap.querySelectorAll('.lfhte-bf-input[required]').forEach(input => {
+        if (!validateField(input)) allValid = false;
+      });
+
+      // Country validation
+      if (!selectedCountry || !COUNTRIES.includes(selectedCountry)) {
+        const cInput = formWrap.querySelector('#lfhte-bf-country');
+        if (cInput) {
+          cInput.classList.add('lfhte-bf-error');
+          const errEl = cInput.closest('.lfhte-bf-field')?.querySelector('.lfhte-bf-error-msg');
+          if (errEl) errEl.classList.add('visible');
+        }
+        allValid = false;
+      }
+
+      if (!allValid) return;
+
+      // Cache step 1 values
+      step1Values = {
+        firstName: formWrap.querySelector('#lfhte-bf-fname')?.value.trim() || '',
+        lastName: formWrap.querySelector('#lfhte-bf-lname')?.value.trim() || '',
+        email: formWrap.querySelector('#lfhte-bf-email')?.value.trim() || '',
+        phone: formWrap.querySelector('#lfhte-bf-phone')?.value.trim() || '',
+        hearAboutUs: formWrap.querySelector('#lfhte-bf-hear')?.value || '',
+      };
+
+      // Transition to step 2
+      formWrap.style.opacity = '0';
+      formWrap.style.transform = 'translateY(8px)';
+      setTimeout(() => {
+        renderStep2();
+        formWrap.style.transition = 'opacity 0.3s, transform 0.3s';
+        formWrap.style.opacity = '1';
+        formWrap.style.transform = 'translateY(0)';
+      }, 150);
+    });
+  }
+
+  // ======================================================================
+  // STEP 2: Interactions + Submit
+  // ======================================================================
+
+  function wireStep2Interactions() {
+    const form = formWrap.querySelector('#lfhte-bf-form-step2');
+    if (!form) return;
+
+    // Group size slider
+    const groupSlider = formWrap.querySelector('#lfhte-bf-group');
+    const groupVal = formWrap.querySelector('#lfhte-bf-group-val');
+    if (groupSlider) {
+      groupSlider.addEventListener('input', () => {
+        groupSize = parseInt(groupSlider.value);
+        groupVal.textContent = groupSize;
+      });
+    }
+
+    // Request type selection
+    const rtCards = formWrap.querySelectorAll('.lfhte-bf-rt-card');
+    const rtError = formWrap.querySelector('#lfhte-bf-rt-error');
+    rtCards.forEach(card => {
+      card.addEventListener('click', () => {
+        rtCards.forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedRequestType = card.dataset.rt;
+        if (rtError) rtError.classList.remove('visible');
+      });
+    });
+
+    // Back button
+    const backBtn = formWrap.querySelector('#lfhte-bf-back');
+    if (backBtn) {
+      backBtn.addEventListener('click', () => {
+        formWrap.style.opacity = '0';
+        formWrap.style.transform = 'translateY(8px)';
+        setTimeout(() => {
+          renderStep1();
+          formWrap.style.transition = 'opacity 0.3s, transform 0.3s';
+          formWrap.style.opacity = '1';
+          formWrap.style.transform = 'translateY(0)';
+        }, 150);
+      });
+    }
+
+    // Form submit
+    const submitBtn = formWrap.querySelector('#lfhte-bf-submit');
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      let allValid = true;
+
+      // Request type
+      if (!selectedRequestType) {
+        if (rtError) rtError.classList.add('visible');
+        allValid = false;
+      }
+
+      // Consent
+      const consentBox = formWrap.querySelector('#lfhte-bf-consent');
+      const consentError = formWrap.querySelector('#lfhte-bf-consent-error');
+      if (!consentBox?.checked) {
+        if (consentError) consentError.classList.add('visible');
+        allValid = false;
+      } else {
+        if (consentError) consentError.classList.remove('visible');
+      }
+
+      if (!allValid) return;
+
+      // Build qualification
+      const qualification = computeQualification(selectedRequestType, selectedSkiDays);
+
+      // Build payload
+      const dateSelect = formWrap.querySelector('#lfhte-bf-date');
+      const notesField = formWrap.querySelector('#lfhte-bf-notes');
+
+      const payload = {
+        lead: {
+          firstName: step1Values.firstName,
+          lastName: step1Values.lastName,
+          email: step1Values.email,
+          phone: step1Values.phone,
+          country: selectedCountry,
+          hearAboutUs: step1Values.hearAboutUs || '',
+          skiDaysPerYear: selectedSkiDays || '',
+          catSkied: selectedCatSkied || '',
+          heliSkied: selectedHeliSkied || '',
+        },
+        bookingRequest: {
+          tourId: tour.id,
+          tourName: tour.name,
+          tourDuration: tour.duration,
+          tourLodges: lodgesDisplay,
+          requestedDate: dateSelect ? dateSelect.value : '',
+          groupSize,
+          requestType: selectedRequestType,
+          additionalNotes: notesField?.value.trim() || '',
+        },
+        qualification,
+        conversationalIntentSignals: {
+          intentLevel: intentSignals.intentLevel || '',
+          hasTimeline: intentSignals.hasTimeline || '',
+          timelineDetails: intentSignals.timelineDetails || '',
+          groupComposition: intentSignals.groupComposition || '',
+          priorExperience: intentSignals.priorExperience || '',
+          conversationSummary: intentSignals.conversationSummary || '',
+        },
+        conversationData: {
+          history: conversationHistory || '',
+          conversationId,
+          userId,
+          timestamp: new Date().toISOString(),
+        },
+        visitorContext: {
+          deviceType: visitorContext.deviceType || '',
+          pageType: visitorContext.pageType || '',
+          pageTopic: visitorContext.pageTopic || '',
+          timezone: visitorContext.timezone || '',
+          visitCount: visitorContext.visitCount || '',
+          isReturning: visitorContext.isReturning || '',
+          language: visitorContext.language || '',
+          localHour: visitorContext.localHour || '',
+          dayOfWeek: visitorContext.dayOfWeek || '',
+        },
+        source: 'tour_booking_request',
+        formVersion: '2.0.0',
+      };
+
+      // Show loading
+      submitBtn.disabled = true;
+      submitBtn.classList.add('loading');
+
+      // Replace form with loading state
+      formWrap.innerHTML = `
+        <div class="lfhte-bf-loading-state">
+          <div class="lfhte-bf-loading-spinner"></div>
+          <p>Preparing your request...</p>
+        </div>
+      `;
+
+      try {
+        // Send to webhook
+        if (webhookUrl) {
+          await fetch(webhookUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+        }
+      } catch (err) {
+        console.warn('[BookingForm] Webhook error (non-blocking):', err);
+      }
+
+      // Wait for loading animation
+      await new Promise(r => setTimeout(r, 1500));
+
+      // Show success
+      const requestLabel = REQUEST_TYPES.find(rt => rt.id === selectedRequestType)?.label || 'Request';
+      formWrap.innerHTML = `
+        <div class="lfhte-bf-success">
+          <div class="lfhte-bf-success-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+          <h3>Request Sent!</h3>
+          <p>Your <strong>${requestLabel}</strong> for the <strong>${tour.name}</strong> has been submitted.
+          Our team will review your request and get back to you within 24 hours.</p>
+        </div>
+      `;
+
+      // Callback
+      onSubmitSuccess(payload);
+    });
+  }
+
+  // ======================================================================
+  // SHARED: Field Validation
+  // ======================================================================
+
   function validateField(input) {
     const errEl = input.closest('.lfhte-bf-field')?.querySelector('.lfhte-bf-error-msg');
     let valid = true;
@@ -679,116 +1209,6 @@ export function renderBookingForm(container, options = {}) {
     return valid;
   }
 
-  // Blur validation for required fields
-  formWrap.querySelectorAll('.lfhte-bf-input[required]').forEach(input => {
-    input.addEventListener('blur', () => validateField(input));
-  });
-
-  // Form submit
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    // Validate all fields
-    let allValid = true;
-    formWrap.querySelectorAll('.lfhte-bf-input[required]').forEach(input => {
-      if (!validateField(input)) allValid = false;
-    });
-
-    // Country validation
-    if (!selectedCountry || !COUNTRIES.includes(selectedCountry)) {
-      const cInput = formWrap.querySelector('#lfhte-bf-country');
-      cInput.classList.add('lfhte-bf-error');
-      const errEl = cInput.closest('.lfhte-bf-field')?.querySelector('.lfhte-bf-error-msg');
-      if (errEl) errEl.classList.add('visible');
-      allValid = false;
-    }
-
-    // Request type
-    if (!selectedRequestType) {
-      if (rtError) rtError.classList.add('visible');
-      allValid = false;
-    }
-
-    // Consent
-    const consentBox = formWrap.querySelector('#lfhte-bf-consent');
-    const consentError = formWrap.querySelector('#lfhte-bf-consent-error');
-    if (!consentBox.checked) {
-      if (consentError) consentError.classList.add('visible');
-      allValid = false;
-    } else {
-      if (consentError) consentError.classList.remove('visible');
-    }
-
-    if (!allValid) return;
-
-    // Build payload
-    const dateSelect = formWrap.querySelector('#lfhte-bf-date');
-    const payload = {
-      lead: {
-        firstName: formWrap.querySelector('#lfhte-bf-fname').value.trim(),
-        lastName: formWrap.querySelector('#lfhte-bf-lname').value.trim(),
-        email: formWrap.querySelector('#lfhte-bf-email').value.trim(),
-        phone: formWrap.querySelector('#lfhte-bf-phone').value.trim(),
-        country: selectedCountry,
-      },
-      bookingRequest: {
-        tourId: tour.id,
-        tourName: tour.name,
-        tourDuration: tour.duration,
-        tourLodges: lodgesDisplay,
-        requestedDate: dateSelect ? dateSelect.value : '',
-        groupSize,
-        requestType: selectedRequestType,
-      },
-      conversationData: {
-        conversationId,
-        userId,
-        timestamp: new Date().toISOString(),
-      },
-      source: 'tour_booking_request',
-      formVersion: '1.0.0',
-    };
-
-    // Show loading
-    submitBtn.disabled = true;
-    submitBtn.classList.add('loading');
-
-    // Replace form with loading state
-    formWrap.innerHTML = `
-      <div class="lfhte-bf-loading-state">
-        <div class="lfhte-bf-loading-spinner"></div>
-        <p>Preparing your request...</p>
-      </div>
-    `;
-
-    try {
-      // Send to webhook
-      if (webhookUrl) {
-        await fetch(webhookUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-      }
-    } catch (err) {
-      console.warn('[BookingForm] Webhook error (non-blocking):', err);
-    }
-
-    // Wait for loading animation
-    await new Promise(r => setTimeout(r, 1500));
-
-    // Show success
-    const requestLabel = REQUEST_TYPES.find(rt => rt.id === selectedRequestType)?.label || 'Request';
-    formWrap.innerHTML = `
-      <div class="lfhte-bf-success">
-        <div class="lfhte-bf-success-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
-        <h3>Request Sent!</h3>
-        <p>Your <strong>${requestLabel}</strong> for the <strong>${tour.name}</strong> has been submitted.
-        Our team will review your request and get back to you within 24 hours.</p>
-      </div>
-    `;
-
-    // Callback
-    onSubmitSuccess(payload);
-  });
+  // --- Start: Render Step 1 ---
+  renderStep1();
 }

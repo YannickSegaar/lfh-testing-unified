@@ -35,6 +35,11 @@ export const LFHTourExplorerGridBookingUnified = {
       animateIn = true,
       bookingVariant = 'replace',
       webhookUrl = '',
+      conversationId = null,
+      userId = null,
+      visitorContext = {},
+      conversationHistory = null,
+      intentSignals = {},
     } = trace.payload || {};
 
     element.innerHTML = '';
@@ -212,6 +217,11 @@ export const LFHTourExplorerGridBookingUnified = {
     const modalConfig = {
       bookingVariant,
       webhookUrl,
+      conversationId,
+      userId,
+      visitorContext,
+      conversationHistory,
+      intentSignals,
       isMobile,
       onCompareLodges: (focusLodge) => openLodgeCompareModal(focusLodge || null),
       onCheckConditions: () => openWeatherConditionsModal(),
