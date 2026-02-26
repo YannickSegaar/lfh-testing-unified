@@ -1224,7 +1224,7 @@ function buildModalStyles() {
 }
 .lfhte-compare-table th, .lfhte-compare-table td {
   padding: 12px; border: 1px solid ${LFH_COLORS.border};
-  text-align: left; vertical-align: top;
+  text-align: left; vertical-align: top; color: ${LFH_COLORS.textPrimary};
 }
 .lfhte-compare-th { background: ${LFH_COLORS.infoBox}; min-width: 160px; }
 .lfhte-compare-tour-name {
