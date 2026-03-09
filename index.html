@@ -445,7 +445,8 @@ function loadVoiceflow() {
                 welcomeGridV2Mod,
                 leadCaptureMod,
                 snowfallMod,
-                hubModalMod
+                hubModalMod,
+                bookingFormV21Mod
             ] = await Promise.all([
                 import('./extensions/lfh-feedback-v10.js'),
                 import('./extensions/browser-self-service-v4-widget-unified.js'),
@@ -462,6 +463,7 @@ function loadVoiceflow() {
                 import('./extensions/lead-capture-form-v4-unified.js'),
                 import('./extensions/snowfall.js'),
                 import('./extensions/lfh-hub-modal.js'),
+                import('./extensions/lfh-tour-booking-form-v2.1-test-extension.js'),
             ]);
             extensions = [
                 feedbackMod.FeedbackExtension10,
@@ -475,6 +477,7 @@ function loadVoiceflow() {
                 leadCaptureMod.LastFrontierLeadForm_v4_Unified,
                 snowfallMod.SnowfallExtension1,
                 hubModalMod.LastFrontierHub,
+                bookingFormV21Mod.TourBookingFormV21TestExtension,
             ].filter(Boolean);
             console.log('Extensions loaded:', extensions.map(function(e) { return e.name; }));
         } catch (err) {
